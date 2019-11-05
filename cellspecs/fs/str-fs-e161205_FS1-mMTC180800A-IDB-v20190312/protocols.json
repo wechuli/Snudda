@@ -1,0 +1,130 @@
+{
+    "IV_583": {
+        "stimuli": [
+            {
+                "delay": 100.0, 
+                "amp": -0.4015, 
+                "duration": 1000.0, 
+                "totduration": 1400.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1828, 
+                "duration": 1400.0, 
+                "totduration": 1400.0
+            }
+        ]
+    }, 
+    "IV_587": {
+        "stimuli": [
+            {
+                "delay": 100.0, 
+                "amp": -0.172, 
+                "duration": 1000.0, 
+                "totduration": 1400.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1828, 
+                "duration": 1400.0, 
+                "totduration": 1400.0
+            }
+        ]
+    }, 
+    "IV_593": {
+        "stimuli": [
+            {
+                "delay": 100.0, 
+                "amp": 0.1725, 
+                "duration": 1000.0, 
+                "totduration": 1400.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1828, 
+                "duration": 1400.0, 
+                "totduration": 1400.0
+            }
+        ]
+    },
+    "IDthresh-sub_714": {
+        "stimuli": [
+            {
+                "delay": 700.0, 
+                "amp": 0.2577, 
+                "duration": 2000.0, 
+                "totduration": 3000.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1829, 
+                "duration": 3000.0, 
+                "totduration": 3000.0
+            }
+        ]
+    }, 
+    "IDthresh_716": {
+        "stimuli": [
+            {
+                "delay": 700.0, 
+                "amp": 0.2748, 
+                "duration": 2000.0, 
+                "totduration": 3000.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1829, 
+                "duration": 3000.0, 
+                "totduration": 3000.0
+            }
+        ]
+    }, 
+    "IDthresh_720": {
+        "stimuli": [
+            {
+                "delay": 700.0, 
+                "amp": 0.3079, 
+                "duration": 2000.0, 
+                "totduration": 3000.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1829, 
+                "duration": 3000.0, 
+                "totduration": 3000.0
+            }
+        ]
+    }, 
+    "IDthresh_726": {
+        "stimuli": [
+            {
+                "delay": 700.0, 
+                "amp": 0.4159, 
+                "duration": 2000.0, 
+                "totduration": 3000.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1829, 
+                "duration": 3000.0, 
+                "totduration": 3000.0
+            }
+        ]
+    }, 
+    "IDthresh_733": {
+        "stimuli": [
+            {
+                "delay": 700.0, 
+                "amp": 0.4159, 
+                "duration": 2000.0, 
+                "totduration": 3000.0
+            }, 
+            {
+                "delay": 0.0, 
+                "amp": 0.1829, 
+                "duration": 3000.0, 
+                "totduration": 3000.0
+            }
+        ]
+    }
+}

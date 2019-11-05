@@ -94,7 +94,7 @@ class NeuronModel(ephys.models.CellModel):
     
     param_configs = json.load(open(parameter_config))
     parameters = []
-
+    
     # detect if new or old file is used; if new param files draw random from list of list. 
     if "with_mod" in parameter_config:
       print("Neuron_model_extended -> define paramters: setting random seed: " + str(self.randomSeed))

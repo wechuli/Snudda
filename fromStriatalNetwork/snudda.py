@@ -84,7 +84,7 @@ class Snudda(object):
     assert args.size is not None, \
       "You need to speicfy --size when initialising config for network2"
     
-    from snudda_init import SnuddaInit
+    from CreateNetworkConfig import CreateNetworkConfig
     structDef = { "Striatum" : args.size,
                   "GPe" : 0,
                   "GPi" : 0,
@@ -95,17 +95,17 @@ class Snudda(object):
     # Cortex and thalamus axons disabled right now, set to 1 to include one
 
     assert not os.path.exists(self.networkPath), \
-      "Network path " + str(self.networkPath) + " already exists" \
-      + " (aborting to prevent accidental overwriting)"
+      "Network path " + str(self.networkPath) + " already exists"
 
-    self.makeDirIfNeeded(self.networkPath)
+    if not os.path.exists(self.networkPath):
+      os.makedirs(self.networkPath)
 
     nChannels = args.nchannels
       
     configFile = self.networkPath + "/network-config.json"
-    SnuddaInit(structDef=structDef,
-               configName=configFile,
-               nChannels=nChannels)
+    CreateNetworkConfig(structDef=structDef,
+                        configName=configFile,
+                        nChannels=nChannels)
 
     if(args.size > 1e5):
       print("Make sure there is enough disk space in " + str(self.networkPath))
@@ -122,23 +122,23 @@ class Snudda(object):
 
     configFile = self.networkPath + "/network-config.json"
     positionFile = self.networkPath + "/network-neuron-positions.hdf5"
-    logFileName = self.networkPath + "/log/logFile-place-neurons.txt"
+    logFileName = self.networkPath + "/logFile-place-neurons.txt"
 
     self.setupLogFile(logFileName) # sets self.logFile
     self.setupParallel() # sets self.dView and self.lbView
 
-    from snudda_place import SnuddaPlace
+    import Network_place_neurons
 
     if(args.h5legacy):
       h5libver = "earliest"
     else:
       h5libver = "latest" # default
       
-    npn = SnuddaPlace(config_file=configFile,
-                      logFile=self.logFile,
-                      verbose=True,
-                      dView=self.dView,
-                      h5libver=h5libver)
+    npn = Network_place_neurons.NetworkPlaceNeurons(config_file=configFile,
+                                                    logFile=self.logFile,
+                                                    verbose=True,
+                                                    dView=self.dView,
+                                                    h5libver=h5libver)
 
     npn.writeDataHDF5(positionFile)
 
@@ -162,17 +162,16 @@ class Snudda(object):
       volumeID = args.volumeID
     else:
       volumeID = None
-
-    logDir = self.networkPath + "/log"
-    
+      
     configFile = self.networkPath + "/network-config.json"
     positionFile = self.networkPath + "/network-neuron-positions.hdf5"
-    logFileName = self.networkPath + "/log/logFile-touch-detection.txt"
+    logFileName = self.networkPath + "/logFile-touch-detection.txt"
     saveFile = self.networkPath + "/voxels/network-putative-synapses.hdf5"
 
-    
     voxelDir = self.networkPath + "/voxels"
-    self.makeDirIfNeeded(voxelDir)
+    if not os.path.exists(voxelDir):
+      os.makedirs(voxelDir)
+
     
     self.setupLogFile(logFileName) # sets self.logFile
     self.setupParallel() # sets self.dView and self.lbView
@@ -182,35 +181,36 @@ class Snudda(object):
     else:
       h5libver = "latest" # default
     
-    from snudda_detect import SnuddaDetect
+    import Network_connect_voxel
     
     if(args.cont):
       # Continue previous run
       print("Continuing previous touch detection")
       
-      ncv = SnuddaDetect(configFile=configFile,
-                         positionFile=positionFile,
-                         logFile=self.logFile,
-                         saveFile=saveFile,
-                         SlurmID=self.SlurmID,
-                         volumeID=volumeID,
-                         rc=self.rc,
-                         hyperVoxelSize=hyperVoxelSize,
-                         h5libver=h5libver,
-                         restartDetectionFlag=False)
-      
+      ncv = Network_connect_voxel.NetworkConnectVoxel(configFile=configFile,
+                                                      positionFile=positionFile,
+                                                      logFile=self.logFile,
+                                                      saveFile=saveFile,
+                                                      SlurmID=self.SlurmID,
+                                                      volumeID=volumeID,
+                                                      rc=self.rc,
+                                                      hyperVoxelSize\
+                                                        =hyperVoxelSize,
+                                                      h5libver=h5libver,
+                                                    restartDetectionFlag=False)
+
       
     else:
-      ncv = SnuddaDetect(configFile=configFile,
-                         positionFile=positionFile,
-                         logFile=self.logFile,
-                         saveFile=saveFile,
-                         SlurmID=self.SlurmID,
-                         volumeID=volumeID,
-                         rc=self.rc,
-                         h5libver=h5libver,
-                         hyperVoxelSize=hyperVoxelSize)
-      
+      ncv = Network_connect_voxel.NetworkConnectVoxel(configFile=configFile,
+                                                      positionFile=positionFile,
+                                                      logFile=self.logFile,
+                                                      saveFile=saveFile,
+                                                      SlurmID=self.SlurmID,
+                                                      volumeID=volumeID,
+                                                      rc=self.rc,
+                                                      h5libver=h5libver,
+                                                      hyperVoxelSize\
+                                                        =hyperVoxelSize)
     self.stopParallel()
     self.closeLogFile()
 
@@ -221,11 +221,11 @@ class Snudda(object):
     print("Prune synapses")
     print("Network path: " + str(self.networkPath))
 
-    from snudda_prune import SnuddaPrune
+    import Network_connect_voxel_prune
 
-    logFileName = self.networkPath + "/log/logFile-synapse-pruning.txt"
+    logFileName = self.networkPath + "/logFile-synapse-pruning.txt"
 
-    workLog = self.networkPath + "/log/network-detect-worklog.hdf5" 
+    workLog = self.networkPath + "/network-putative-synapses-worklog.hdf5" 
     
     self.setupLogFile(logFileName) # sets self.logFile
     self.setupParallel() # sets self.dView and self.lbView
@@ -245,13 +245,15 @@ class Snudda(object):
     else:
       h5libver = "latest" # default
     
-    ncvp = SnuddaPrune(workHistoryFile=workLog,
-                       logFile=self.logFile,
-                       logFileName=logFileName,
-                       dView=self.dView, lbView=self.lbView,
-                       scratchPath=scratchPath,
-                       h5libver=h5libver,
-                       preMergeOnly=preMergeOnly)
+    ncvp = Network_connect_voxel_prune.NetworkConnectVoxelPrune(
+                  workHistoryFile=workLog,
+                  logFile=self.logFile,
+                  logFileName=logFileName,
+                  dView=self.dView, lbView=self.lbView,
+                  scratchPath=scratchPath,
+                  h5libver=h5libver,
+                  preMergeOnly=preMergeOnly)
+
     
     self.stopParallel()
     self.closeLogFile()
@@ -261,14 +263,14 @@ class Snudda(object):
 
   def setupInput(self,args):
 
-    from snudda_input import SnuddaInput
+    from Network_input import NetworkInput
     
     print("Setting up inputs, assuming input.json exists")
-    logFileName = self.networkPath + "/log/logFile-setup-input.log"
+    logFileName = self.networkPath + "/logFile-setup-input.log"
     self.setupLogFile(logFileName) # sets self.logFile
     self.setupParallel() # sets self.dView and self.lbView
     
-    if "input" in args:
+    if input in args:
       inputConfig = args.input
     else:
       inputConfig = self.networkPath + "/input.json"
@@ -276,31 +278,20 @@ class Snudda(object):
     if(not os.path.isfile(inputConfig)):
       print("Missing input config file: " + str(inputConfig))
       return
-
-    if(args.networkFile):
-      networkFile = args.networkFile
-    else:
-      networkFile = self.networkPath \
-        + "/network-pruned-synapses.hdf5"
-
-    if(args.inputFile):
-      spikeFile = args.inputFile
-    else:
-      spikeFile = self.networkPath + "/input-spikes.hdf5"
-
-    if(args.time):
-      inputTime = args.time
-
-    print("Writing input spikes to " + spikeFile)
       
-    ni = SnuddaInput(inputConfigFile=inputConfig,
-                     HDF5networkFile=networkFile,
-                     spikeDataFileName=spikeFile,
-                     time=inputTime,
-                     logFile=self.logFile)
+    networkFile = self.networkPath \
+                  + "/network-connect-voxel-pruned-synapse-file.hdf5"
+
+    spikeFile = self.networkPath + "/input-spikes.hdf5"
+    
+    ni = NetworkInput(inputConfigFile=inputConfig,
+                      HDF5networkFile=networkFile,
+                      spikeDataFileName=spikeFile)
 
     self.stopParallel()
     self.closeLogFile()
+    
+    
     
   ############################################################################
 
@@ -311,16 +302,10 @@ class Snudda(object):
     print("Exporting to SONATA format")
     print("Network path: " + str(self.networkPath))
 
-    if(args.networkFile):
-      networkFile = args.networkFile
-    else:
-      networkFile = self.networkPath \
-        + "/network-pruned-synapses.hdf5"
+    networkFile = self.networkPath \
+                  + "/network-connect-voxel-pruned-synapse-file.hdf5"
 
-    if(args.inputFile):
-      inputFile = args.inputFile
-    else:
-      inputFile = self.networkPath + "/input-spikes.hdf5"
+    inputFile = self.networkPath + "/input-spikes.hdf5"
 
 
     outDir = self.networkPath + "/SONATA/"
@@ -333,27 +318,10 @@ class Snudda(object):
 
   def simulate(self,args):
 
-    if(args.networkFile):
-      networkFile = args.networkFile
-    else:
-      networkFile = self.networkPath \
-        + "/network-pruned-synapses.hdf5"
+    networkFile = self.networkPath + "/network-connect-voxel-pruned-synapse-file.hdf5"
+    inputFile = self.networkPath + "/input-spikes.hdf5"
 
-    if(args.inputFile):
-      inputFile = args.inputFile
-    else:
-      inputFile = self.networkPath + "/input-spikes.hdf5"
-
-    self.makeDirIfNeeded(self.networkPath + "/simulation")
-      
-    print("Using input file " + inputFile)
-
-    nWorkers = 12
-    cmdStr = "nrnivmodl cellspecs/mechanisms_with_modulation && mpiexec -n " + str(nWorkers) + " -map-by socket:OVERSUBSCRIBE python3 snudda_simulate.py " + networkFile + " " + inputFile + " --time " + str(args.time)
-
-    if(args.voltOut is not None):
-      cmdStr += " --voltOut " + args.voltOut
-
+    cmdStr = "nrnivmodl cellspecs/mechanisms_with_modulation && mpiexec -n 10 -map-by socket:OVERSUBSCRIBE python3 Network_simulate.py " + networkFile + " " + inputFile
     os.system(cmdStr)
   
   ############################################################################
@@ -417,16 +385,9 @@ class Snudda(object):
   ############################################################################
       
   def setupLogFile(self, logFileName):
-    dataDir = os.path.dirname(logFileName)
-    
-    self.makeDirIfNeeded(dataDir)
-      
-    try:
-      self.logFile = open(logFileName,'w')
-      self.logFile.write('Starting log file\n')
-    except:
-      print("Unable to set up log file " + str(logFileName))
-      
+    self.logFile = open(logFileName,'w')
+    self.logFile.write('Starting log file\n')
+
   ############################################################################
 
   def closeLogFile(self):
@@ -439,7 +400,7 @@ class Snudda(object):
     self.logFile.write("End of log. Closing file.")
     self.logFile.close()   
     
-  ##############################################################################
+##############################################################################
 
 
   def nextRunID(self):
@@ -480,14 +441,11 @@ class Snudda(object):
     print("Using runID = " + str(nextID))
   
     return nextID
+
+
   
-############################################################################
 
-  def makeDirIfNeeded(self,dirPath):
 
-    if(not os.path.exists(dirPath)):
-      print("Creating missing directory " + dirPath)
-      os.makedirs(dirPath)
 
 ##############################################################################
 
@@ -510,14 +468,7 @@ if __name__ == "__main__":
   parser.add_argument("--h5legacy",help="Use legacy hdf5 support",action="store_true")
   parser.add_argument("--profile",help="Run python cProfile",action="store_true")
   parser.add_argument("--nchannels",type=int,help="Number of functional channels in the structure, affects connectivity and input correlation",default=1)
-  parser.add_argument("--input",help="Input json config file (for input setup)")
-  parser.add_argument("--inputFile",help="Input hdf5 file (for simulation)")
-  parser.add_argument("--networkFile", help="Network file, if not network-pruned-synapses.hdf5")
-  parser.add_argument("--time",type=float,default=2.5,
-                      help="Duration of simulation in seconds")
-  parser.add_argument("--voltOut","--voltout",
-                      default=None,
-                      help="Name of voltage output file (csv)")
+  parser.add_argument("--input",help="Input json config file")
   
   args = parser.parse_args()
   

@@ -33,7 +33,7 @@ module load openmpi/3.0-gcc-7.2
 
 # export ANACONDA_HOME=/afs/pdc.kth.se/home/h/hjorth/.conda/envs/anaconda_snudda/
 #export ANACONDA_HOME=/cfs/klemming/nobackup/t/torkj/anaconda3
-export ANACONDA_HOME=/cfs/klemming/nobackup/h/hjorth/anaconda3
+export ANACONDA_HOME=/cfs/klemming/nobackup/"${USER:0:1}"/$USER/anaconda3
 echo "ANACONDA_HOME=$ANACONDA_HOME"
 
 # module add intelmpi/17.0.1
