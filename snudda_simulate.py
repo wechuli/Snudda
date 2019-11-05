@@ -1666,7 +1666,7 @@ if __name__ == "__main__":
       voltFile = args.voltOut
       
   if(args.spikesOut is None or args.spikesOut == "default"):
-    spikesFile = saveDir + 'network-output-spikes-' + SlurmID + '.txt'
+    spikesFile = saveDir + 'network-output-spikes-DA-' + SlurmID + '.txt'
   else:
     spikesFile = args.spikesOut
   
@@ -1688,7 +1688,7 @@ if __name__ == "__main__":
   
   # ======================================================================
   
-  
+  '''  
   sim = SnuddaSimulate( networkFile=networkDataFile,
                         inputFile=inputFile,
                         disableGapJunctions=disableGJ,
@@ -1709,8 +1709,8 @@ if __name__ == "__main__":
     sim.run(tSim)
     sim.writeSpikes('save/traces/network-output-spikes-{}_orgM_disSyn{}.txt'.format(tag, disableSynapses))
     sim.writeVoltage('save/traces/network-voltage-{}_orgM_disSyn{}.csv'.format(tag, disableSynapses), downSampling=1, use_name=1)
+  '''
   
-  '''  
   sim = SnuddaSimulate(networkFile=networkDataFile,
                        inputFile=inputFile,
                        disableGapJunctions=disableGJ,
@@ -1722,6 +1722,9 @@ if __name__ == "__main__":
     sim.addRecording(sideLen=None) # Side len let you record from a subset
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
+  
+  v = [alpha(ht, 500, 500) for ht in np.arange(0,1500,0.025)]
+  sim.applyDopamine(play=v)
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds
@@ -1738,7 +1741,7 @@ if __name__ == "__main__":
   print("Program run time: " + str(stop - start ))
 
   # sim.plot()
-  exit(0)'''
+  exit(0)
 
 # Check this code example
 # Why are spikes not propagated from one neuron to another
