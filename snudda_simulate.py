@@ -1128,7 +1128,7 @@ class SnuddaSimulate(object):
                         'fs':   ['kir_fs', 'kas_fs', 'kaf_fs', 'naf_fs'],
                         'chin': ['na_ch','na2_ch','kv4_ch','kir2_ch','hcn12_ch','cap_ch'],
                         'lts':  ['na3_lts','hd_lts']     }
-    if len(modList) == 0: cell_type = channel_suffix
+    if len(modList) == 0: cell_type = channel_sufix
     else: cell_type = modList
     # TODO: check cell type direct and remove loop
     for ct in cell_type:
