@@ -8,7 +8,7 @@ UNITS {
 }
 
 NEURON {
-    SUFFIX sk
+    SUFFIX sk_fs
     USEION ca READ cai
     USEION k READ ek WRITE ik
     RANGE gbar, ik
