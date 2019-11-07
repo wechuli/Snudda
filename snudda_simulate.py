@@ -1666,7 +1666,7 @@ if __name__ == "__main__":
       voltFile = args.voltOut
       
   if(args.spikesOut is None or args.spikesOut == "default"):
-    spikesFile = saveDir + 'network-output-spikes-DA-' + SlurmID + '.txt'
+    spikesFile = saveDir + 'network-output-spikes-noDA-' + SlurmID + '.txt'
   else:
     spikesFile = args.spikesOut
   
@@ -1714,6 +1714,7 @@ if __name__ == "__main__":
   sim = SnuddaSimulate(networkFile=networkDataFile,
                        inputFile=inputFile,
                        disableGapJunctions=disableGJ,
+                       disableSynapses=disableSynapses,
                        logFile=logFile)
 
   sim.addExternalInput()
@@ -1723,8 +1724,8 @@ if __name__ == "__main__":
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
-  v = [alpha(ht, 500, 500) for ht in np.arange(0,1500,0.025)]
-  sim.applyDopamine(play=v)
+  #v = [alpha(ht, 500, 500) for ht in np.arange(0,1500,0.025)]
+  #sim.applyDopamine(play=v)
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds

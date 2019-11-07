@@ -20,7 +20,7 @@ where:
 ENDCOMMENT
 
 NEURON {
-	SUFFIX hd
+	SUFFIX hd_lts
 	NONSPECIFIC_CURRENT i
     RANGE ghdbar, vhalfl
     GLOBAL linf,taul

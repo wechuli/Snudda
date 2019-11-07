@@ -53,8 +53,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -62,8 +62,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -71,8 +71,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -80,8 +80,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -89,8 +89,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",
@@ -170,8 +170,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -179,8 +179,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -188,8 +188,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -197,8 +197,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -206,8 +206,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",
@@ -287,8 +287,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -296,8 +296,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -305,8 +305,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -314,8 +314,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -323,8 +323,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",
@@ -404,8 +404,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -413,8 +413,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -422,8 +422,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -431,8 +431,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -440,8 +440,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",
@@ -521,8 +521,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -530,8 +530,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -539,8 +539,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -548,8 +548,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -557,8 +557,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",
@@ -638,8 +638,8 @@
             "value": -25.548453888623268
         },
         {
-            "param_name": "ghdbar_hd",
-            "mech": "hd",
+            "param_name": "ghdbar_hd_lts",
+            "mech": "hd_lts",
             "value": 9.910566066143788e-05,
             "dist_type": "uniform",
             "mech_param": "ghdbar",
@@ -647,8 +647,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gbar_na3",
-            "mech": "na3",
+            "param_name": "gbar_na3_lts",
+            "mech": "na3_lts",
             "value": 0.06419516544226937,
             "dist_type": "uniform",
             "mech_param": "gbar",
@@ -656,8 +656,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkdrbar_kdrb",
-            "mech": "kdrb",
+            "param_name": "gkdrbar_kdrb_lts",
+            "mech": "kdrb_lts",
             "value": 0.06154974082116256,
             "dist_type": "uniform",
             "mech_param": "gkdrbar",
@@ -665,8 +665,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gkbar_im",
-            "mech": "im",
+            "param_name": "gkbar_im_lts",
+            "mech": "im_lts",
             "value": 9.451786607525547e-05,
             "dist_type": "uniform",
             "mech_param": "gkbar",
@@ -674,8 +674,8 @@
             "sectionlist": "somatic"
         },
         {
-            "param_name": "gcabar_it",
-            "mech": "it",
+            "param_name": "gcabar_it_lts",
+            "mech": "it_lts",
             "value": 5.464814595218343e-06,
             "dist_type": "uniform",
             "mech_param": "gcabar",

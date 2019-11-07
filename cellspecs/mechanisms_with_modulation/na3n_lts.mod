@@ -23,7 +23,7 @@ where:
 ENDCOMMENT
 
 NEURON {
-	SUFFIX na3
+	SUFFIX na3_lts
 	USEION na READ ena WRITE ina
 	RANGE  gbar, ar, sh
 	GLOBAL minf, hinf, mtau, htau, sinf, taus,qinf, thinf
