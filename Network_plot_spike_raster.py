@@ -99,10 +99,12 @@ class NetworkPlotSpikeRaster(object):
     grid    = plt.GridSpec(r, r, hspace=0, wspace=0)
     ax      = fig.add_subplot(grid[1:,:])
     atop    = fig.add_subplot(grid[0,:])
-    tIdx = np.where(self.time >= skipTime)[0]
+    tIdx    = np.where(self.time >= skipTime)[0]
+    maxt    = max(self.time)
+    
 
     cols2 = [colours[cellTypes[int(s)]] for s in self.spikeID]
-
+    
     ax.scatter(self.time[tIdx]-skipTime,
                plotLookup[self.spikeID[tIdx]],
                color=[cols2[t] for t in tIdx],s=1,
@@ -120,7 +122,7 @@ class NetworkPlotSpikeRaster(object):
                     histtype='stepfilled')'''
         atop.hist(  pruned_spikes, 
                     bins=100, 
-                    range=(0,1.500), 
+                    range=(0,maxt), 
                     density=0,
                     color=colours[t], 
                     alpha=1.0, 
@@ -138,8 +140,8 @@ class NetworkPlotSpikeRaster(object):
     # set axes ---------------------------------------------------
     atop.axis('off')
     # UPDATE here to set specific range for plot window!!!!
-    atop.set_xlim([-0.01,1.51])
-    ax.set_xlim(  [-0.01,1.51])
+    atop.set_xlim([-0.01,maxt+0.01])
+    ax.set_xlim(  [-0.01,maxt+0.01])
     m = len(self.networkInfo.data["neurons"])
     offset = m*0.05 # 5%
     ax.set_ylim([-offset,m+offset])

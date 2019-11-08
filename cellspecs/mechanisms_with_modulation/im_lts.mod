@@ -40,7 +40,7 @@ ENDCOMMENT
 INDEPENDENT {t FROM 0 TO 1 WITH 1 (ms)}
 
 NEURON {
-	SUFFIX im
+	SUFFIX im_lts
 	USEION k READ ek WRITE ik
     RANGE gkbar, m_inf, tau_m
 	GLOBAL taumax

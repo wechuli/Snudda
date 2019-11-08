@@ -103,6 +103,7 @@ class NeuronModel(ephys.models.CellModel):
       allparamdefs = param_configs[random_param_id]
     else: allparamdefs = param_configs
     for param_config in allparamdefs:
+      if param_config['param_name'] == "v_init": self.vinit=param_config['value']
       if 'value' in param_config:
         frozen = True
         value = param_config['value']

@@ -8,7 +8,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",
@@ -125,7 +125,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",
@@ -242,7 +242,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",
@@ -359,7 +359,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",
@@ -476,7 +476,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",
@@ -593,7 +593,7 @@
         {
             "param_name": "v_init",
             "type": "global",
-            "value": -75
+            "value": -74.5
         },
         {
             "param_name": "cm",

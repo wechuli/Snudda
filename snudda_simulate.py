@@ -59,6 +59,7 @@ class SnuddaSimulate(object):
     
     # ------------------------------------------------------------------------
     
+    # TODO: why are these statements duplicated in the if statement below???
     self.networkFile = networkFile
     self.inputFile = inputFile
 
@@ -1096,11 +1097,10 @@ class SnuddaSimulate(object):
       with open(prot_file_name,'r') as pfile:
         protocols = json.load(pfile)
         
-      # get one of the superthreshold protocols
-      count= 0
+      # get one of the superthreshold protocols  
       for key,pd in list(protocols.items()):
-        if 'sub' in key or 'IV' in key: continue
-        print( '\t', count, key, pd['stimuli'][0]['amp'], name, config_file[name]["protocols"] )
+        if 'sub' in key or 'IV' in key: count += 1; continue
+        print( '........\t', pd['stimuli'][1]['amp'], key, pd['stimuli'][0]['amp'], name, prot_file_name )
         break
         
       # baseline injection
@@ -1452,15 +1452,28 @@ class SnuddaSimulate(object):
         pdb.set_trace()
         
   ############################################################################
+  
+  def set_vinit(self, cellID=None):
+    '''set vinit for each cell individually'''
+    
+    if(cellID is None):
+      cellID = self.neuronID
+    cells = dict((k,self.neurons[k]) \
+                 for k in cellID if not self.isVirtualNeuron[k])
+    
+    for cId,cell in cells.items():
+      for compartment in [cell.icell.dend,cell.icell.axon,cell.icell.soma]:
+        for sec in compartment:
+          for seg in sec:
+            seg.v = cell.vinit
         
   def run(self,t=1000.0):
     
-    # If we want to use a non-default initialisation voltage, we need to 
-    # explicitly set: h.v_init
-    self.sim.neuron.h.v_init = -78
-    self.sim.neuron.h.finitialize(-78)
-    # Asked on neuron, check answer:
+    #self.sim.neuron.h.v_init = -78
+    #self.sim.neuron.h.finitialize(-78)
     # https://www.neuron.yale.edu/phpBB/viewtopic.php?f=2&t=4161&p=18021
+    # -> solution implemented in function:
+    self.set_vinit()
     
     # Make sure all processes are synchronised
     self.pc.barrier()
@@ -1666,15 +1679,16 @@ if __name__ == "__main__":
       voltFile = args.voltOut
       
   if(args.spikesOut is None or args.spikesOut == "default"):
-    spikesFile = saveDir + 'network-output-spikes-noDA-' + SlurmID + '.txt'
+    spikesFile = saveDir + 'network-output-spikes-' + SlurmID + '.txt'
   else:
     spikesFile = args.spikesOut
   
   import timeit
   start = timeit.default_timer()
-
-  disableGJ = args.disableGJ
-  # assert disableGJ, "Please use --disableGJ for now, need to test code"
+  
+  # TODO: hard coded to turn of gj -> fix in arguments
+  disableGJ = 1 #	 args.disableGJ
+  assert disableGJ, "Please use --disableGJ for now, need to test code"
   if(disableGJ):
     print("!!! WE HAVE DISABLED GAP JUNCTIONS !!!")
   
@@ -1718,13 +1732,15 @@ if __name__ == "__main__":
                        logFile=logFile)
 
   sim.addExternalInput()
-
+  #sim.addCurrentFromProtocol()
+  
   if(voltFile is not None):
     sim.addRecording(sideLen=None) # Side len let you record from a subset
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
-  #v = [alpha(ht, 500, 500) for ht in np.arange(0,1500,0.025)]
+  #v = [alpha(ht, 300, 100) for ht in np.arange(0,1500,0.025)]
+  #v = [1 if ht>300 else 0 for ht in np.arange(0,1500,0.025)]
   #sim.applyDopamine(play=v)
   
   print("Running simulation for " + str(tSim) + " ms.")

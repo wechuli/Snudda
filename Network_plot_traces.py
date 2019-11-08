@@ -1,7 +1,7 @@
 # python3 Network_plot_traces.py save/traces/network-voltage-0.csv save/network-connect-synapse-file-0.hdf5
 
 
-import sys
+import sys, pickle
 import os
 import numpy as np
 from snudda_load import SnuddaLoad
@@ -55,7 +55,7 @@ class NetworkPlotTraces():
   ############################################################################
 
   def plotTraces(self,traceID=None,offset=150e-3,colours=None,skipTime=None,
-                 title=None):
+                 title=None, compare=0):
 
     if(skipTime is not None):
       print("!!! Excluding first " + str(skipTime) + "s from the plot")
@@ -133,12 +133,27 @@ class NetworkPlotTraces():
           import pdb
           pdb.set_trace()
           
-        
-      plt.plot(self.time[timeIdx]-skipTime,
-               self.voltage[r,:][timeIdx] + ofs,
-               color=colour)
+      plt.plot(self.time,
+               self.voltage[r,:] + ofs,
+               color=colour,
+               lw=3)
       ofs += offset
-
+    
+    if compare:
+        path2control = '../Alex_model_repo/models/optim/Dopamine/Analysis/Results/'
+        if title in ['iSPN', 'dSPN']:
+            with open('{}{}_res_org.pkl'.format(path2control, title.lower()), 'rb') as f:
+                ctrl = pickle.load(f)
+        elif title == 'FSN':
+            with open('{}fs_res_reorg.pkl'.format(path2control), 'rb') as f:
+                ctrl = pickle.load(f) 
+        elif title == 'ChIN':
+            with open('{}chin_res_reorg.pkl'.format(path2control), 'rb') as f:
+                ctrl = pickle.load(f) 
+        for cid in range(len(traceID)):
+            if title not in ['iSPN', 'dSPN', 'FSN', 'ChIN']: continue
+            data = list(ctrl[0]['data'][cid]['control'].values())[0]
+            plt.plot(np.array(data['t'])*1e-3,np.array(data['v'])*1e-3, '--k')
     plt.xlabel('Time')
     plt.ylabel('Voltage')
 
@@ -148,7 +163,7 @@ class NetworkPlotTraces():
     if(offset != 0):
       ax = fig.axes[0]
       ax.set_yticklabels([])
-
+    
     plt.tight_layout()
     plt.ion()
     plt.show()
@@ -160,7 +175,7 @@ class NetworkPlotTraces():
     
     if(len(typesInPlot) > 1):
       figName = 'figures/Network-spikes-' + str(self.ID) \
-        + "-".join(typesInPlot) + "-colour.png"
+        + "-".join(typesInPlot) + "-DAtrans300colour.png"
     else:
       figName = 'figures/Network-spikes-' + str(self.ID) \
         + "-" + typesInPlot.pop() + "-colour.png"
