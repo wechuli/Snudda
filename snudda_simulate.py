@@ -1099,7 +1099,7 @@ class SnuddaSimulate(object):
         
       # get one of the superthreshold protocols  
       for key,pd in list(protocols.items()):
-        if 'sub' in key or 'IV' in key: count += 1; continue
+        if 'sub' in key or 'IV' in key: continue
         print( '........\t', pd['stimuli'][1]['amp'], key, pd['stimuli'][0]['amp'], name, prot_file_name )
         break
         
@@ -1686,21 +1686,21 @@ if __name__ == "__main__":
   import timeit
   start = timeit.default_timer()
   
+  # ======================================================================
+  
+  # No inhibiton between cells if 0
+  disableSynapses = 0
+  
   # TODO: hard coded to turn of gj -> fix in arguments
   disableGJ = 1 #	 args.disableGJ
   assert disableGJ, "Please use --disableGJ for now, need to test code"
   if(disableGJ):
     print("!!! WE HAVE DISABLED GAP JUNCTIONS !!!")
+    
+  # ======================================================================
   
   pc = h.ParallelContext()
   
-  # ======================================================================
-  
-  tSim = 1500        # ms
-  #iamp = 256        # pA
-  disableSynapses = 1
-  
-  # ======================================================================
   
   '''  
   sim = SnuddaSimulate( networkFile=networkDataFile,

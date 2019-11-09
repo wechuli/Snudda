@@ -149,9 +149,12 @@ class NetworkPlotTraces():
                 ctrl = pickle.load(f) 
         elif title == 'ChIN':
             with open('{}chin_res_reorg.pkl'.format(path2control), 'rb') as f:
-                ctrl = pickle.load(f) 
+                ctrl = pickle.load(f)
+        elif title == 'LTS':
+            with open('{}lts_res_org.pkl'.format(path2control), 'rb') as f:
+                ctrl = pickle.load(f)
         for cid in range(len(traceID)):
-            if title not in ['iSPN', 'dSPN', 'FSN', 'ChIN']: continue
+            #if title not in ['iSPN', 'dSPN', 'FSN', 'ChIN']: continue
             data = list(ctrl[0]['data'][cid]['control'].values())[0]
             plt.plot(np.array(data['t'])*1e-3,np.array(data['v'])*1e-3, '--k')
     plt.xlabel('Time')
@@ -187,7 +190,7 @@ class NetworkPlotTraces():
 
   ############################################################################
 
-  def plotTraceNeuronType(self,neuronType,nTraces=10,offset=0,skipTime=0.0):
+  def plotTraceNeuronType(self,neuronType,nTraces=10,offset=0,skipTime=0.0,compare=0):
 
     assert self.networkInfo is not None, "You need to specify networkInfo file"
     
@@ -204,7 +207,7 @@ class NetworkPlotTraces():
       return
     
     self.plotTraces(offset=offset,traceID=traceID[:nTraces],skipTime=skipTime,
-                    title=neuronType)
+                    title=neuronType,compare=compare)
                                    
     
   ############################################################################
@@ -233,12 +236,12 @@ if __name__ == "__main__":
     plotOffset = 0 # -0.2
     skipTime = 0.5
     nTracesMax = 5
-    
-    npt.plotTraceNeuronType(neuronType="dSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime)
-    npt.plotTraceNeuronType(neuronType="iSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime)
-    npt.plotTraceNeuronType(neuronType="FSN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime)
-    npt.plotTraceNeuronType(neuronType="LTS",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime)
-    npt.plotTraceNeuronType(neuronType="ChIN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime)
+    comp=1
+    npt.plotTraceNeuronType(neuronType="dSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    npt.plotTraceNeuronType(neuronType="iSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    npt.plotTraceNeuronType(neuronType="FSN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    npt.plotTraceNeuronType(neuronType="LTS",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    npt.plotTraceNeuronType(neuronType="ChIN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
     
     
     
