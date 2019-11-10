@@ -155,6 +155,8 @@ class NetworkPlotTraces():
                 ctrl = pickle.load(f)
         for cid in range(len(traceID)):
             #if title not in ['iSPN', 'dSPN', 'FSN', 'ChIN']: continue
+            print(cid, len(ctrl[0]['data']))
+            if cid >= len(ctrl[0]['data']):continue
             data = list(ctrl[0]['data'][cid]['control'].values())[0]
             plt.plot(np.array(data['t'])*1e-3,np.array(data['v'])*1e-3, '--k')
     plt.xlabel('Time')

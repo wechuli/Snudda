@@ -95,9 +95,6 @@ class NeuronModel(ephys.models.CellModel):
     param_configs = json.load(open(parameter_config))
     parameters = []
     
-    # Save this to be accessible in the future
-    self.parameters = param_configs
-    
     # detect if new or old file is used; if new param files draw random from list of list. 
     if "with_mod" in parameter_config:
       print("Neuron_model_extended -> define paramters: setting random seed: " + str(self.randomSeed))
@@ -105,6 +102,8 @@ class NeuronModel(ephys.models.CellModel):
       random_param_id = np.random.randint( len(param_configs) )
       allparamdefs = param_configs[random_param_id]
     else: allparamdefs = param_configs
+    # Save this to be accessible in the future
+    self.parameters = allparamdefs
     for param_config in allparamdefs:
       # Adding vinit here! 
       if param_config['param_name'] == "v_init": self.vinit=param_config['value']
