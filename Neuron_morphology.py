@@ -30,8 +30,10 @@ class NeuronMorphology(object):
                pickleVersion=-1,
                logFile = None,
                virtualNeuron = False,
-               axonStumpIDFlag = True ):
+               axonStumpIDFlag = False ):
 
+    self.cacheVersion = 0.9
+    
     self.position = np.copy(np.array(position))
     
     if(rotation is not None):
@@ -91,15 +93,16 @@ class NeuronMorphology(object):
 
     self.dendSecID = []
     self.dendSecX = []
-    
-    if(loadMorphology):
-      # This loads, rotates and places neuron
-      self.loadNeuronMorphology()
 
     if(colour is None):
       self.colour = np.random.random((3,))
     else:
       self.colour = colour
+    
+    if(loadMorphology):
+      # This loads, rotates and places neuron
+      self.loadNeuronMorphology()
+
 
       
   ############################################################################
@@ -110,7 +113,7 @@ class NeuronMorphology(object):
       if(self.cacheExist()):
         # Load existing cache
         try:
-          self.loadCache()
+          self.loadCache() 
         except Exception as e:
           
           import traceback
@@ -134,6 +137,10 @@ class NeuronMorphology(object):
       self.saveCache()
 
     self.place() # Updates position and rotation
+
+    # Remove axonStumpIDFlag completely later...
+    assert not self.axonStumpIDFlag, \
+      "axonStumpFlag is depricated, should be off"
     
   ############################################################################
 
@@ -266,6 +273,7 @@ class NeuronMorphology(object):
   # We can specify a position and rotation
   def place(self, rotation=None, position=None):
 
+    
     if(self.rotatedFlag):
       self.writeLog("!!! WARNING, rotating a rotated neuron...")
     
@@ -278,6 +286,9 @@ class NeuronMorphology(object):
       position = self.position
     elif(type(position) is not np.ndarray):
       position = np.array(position)
+
+    # print("Place called! pos = " + str(position) + ", rot = " + str(rotation))
+
       
     # rotation = self.randRotationMatrix()
       
@@ -349,6 +360,7 @@ class NeuronMorphology(object):
     morph["maxDendRadius"] = self.maxDendRadius
     morph["dendDensity"] = self.dendDensity
     morph["axonDensity"] = self.axonDensity
+    morph["version"] = self.cacheVersion
     
     assert(cacheFile != self.swc_filename)
     print("Saving cache file: " + cacheFile)
@@ -412,7 +424,9 @@ class NeuronMorphology(object):
     self.dendLinks = morph["dendLinks"]
     self.dendSecX = morph["dendSecX"]
     self.dendSecID = morph["dendSecID"]
-    
+
+    assert morph["version"] == self.cacheVersion, \
+      "Cache version mismatch, regenerating cache"
 
     
     self.maxAxonRadius = morph["maxAxonRadius"]
@@ -428,8 +442,8 @@ class NeuronMorphology(object):
     else:
       self.axonDensity = None
       
-    # Place neuron
-    self.place()
+    # Place neuron -- Do not place neuron, loadNeuronMorphology does that
+    # self.place()
 
       
   ############################################################################
@@ -553,31 +567,19 @@ class NeuronMorphology(object):
     # to a stump with the same section ID, then we need to make sure the
     # numbering is correct for the dendrites.
 
-    # !!! REMOVE THE AXON STUMP CODE?
-    
-    if(self.axonStumpIDFlag):
-      sectionID = 0
-      for nIdx in axonIdx:
-        if(points[nIdx,6] == 0):
-          # Soma is parent, skip but increment sectionID
-          sectionID += 2 # !!! Should be 1, but the unbranced axon stump
-                         # somehow counts as two sections by Neuron, so
-                         # until we know what Neurodamus does, let's go with
-                         # how Neuron hanldes it
-          continue
+    # Update, set axonID to -1
+    for nIdx in axonIdx:
+      points[nIdx,10] = -1
+
+    # Set soma ID to 0
+    points[0,10] = 0
+
+    # Calculate sectionID for dendrites
+    sectionID = 1
+
+    # Axon dealt with, only loop over dendrites next
+    nodeLoopList = [basalIdx,apicalIdx]
         
-        points[nIdx,10] = sectionID
-
-      # End of last axon section, increment sectionID for next compartment
-      sectionID += 1
-
-      # Axon dealt with, only loop over dendrites next
-      nodeLoopList = [basalIdx,apicalIdx]
-    else:
-      sectionID = 1
-      # We need to include full axonal tree, and dendrites
-      nodeLoopList = [axonIdx,basalIdx,apicalIdx]
-    
     for idxList in nodeLoopList:
       for nIdx in idxList:
         if(points[nIdx,6] > 0):
@@ -722,6 +724,12 @@ class NeuronMorphology(object):
     self.findRadius()
     self.place()
 
+    if(False):
+      print("Debug plot")
+      self.debugPlot()
+      import pdb
+      pdb.set_trace()
+
   ############################################################################
 
   def findRadius(self):
@@ -742,7 +750,7 @@ class NeuronMorphology(object):
       
   ############################################################################
 
-  def plotNeuron(self,axis=None,plotAxon=True,plotDendrite=True,lineStyle='-',alpha=1.0):
+  def plotNeuron(self,axis=None,plotAxon=True,plotDendrite=True,lineStyle='-',alpha=1.0,plotOrigo=np.array([0,0,0]),plotScale=1.0):
     
     if(self.verbose):
       print("Plotting neuron " + self.swc_filename)
@@ -755,29 +763,72 @@ class NeuronMorphology(object):
       ax = fig.add_subplot(111, projection='3d')
     else:
       ax = axis
-      
+
     if(len(self.axon) > 0 and plotAxon):
+      axLinks = []
+
       for row in self.axonLinks[:,:2].astype(int):
-        ax.plot(self.axon[row,0],
-                self.axon[row,1],
-                self.axon[row,2],
-                linestyle=lineStyle,
-                marker=',',
-                alpha=alpha,
-                c=self.colour)
+        if(len(axLinks) == 0):
+          axLinks = list(row)
+        elif(row[0] == axLinks[-1]):
+          axLinks.append(row[1])
+        elif(row[1] == axLinks[-1]):
+          axLinks.append(row[0])
+        else:
+          ax.plot((self.axon[axLinks,0]-plotOrigo[0])*plotScale,
+                  (self.axon[axLinks,1]-plotOrigo[1])*plotScale,
+                  (self.axon[axLinks,2]-plotOrigo[2])*plotScale,
+                  linestyle=lineStyle,
+                  marker=',',
+                  alpha=alpha,
+                  c=self.colour)
+
+          axLinks = list(row)
+
+      if(len(axLinks) > 0):
+          ax.plot((self.axon[axLinks,0]-plotOrigo[0])*plotScale,
+                  (self.axon[axLinks,1]-plotOrigo[1])*plotScale,
+                  (self.axon[axLinks,2]-plotOrigo[2])*plotScale,
+                  linestyle=lineStyle,
+                  marker=',',
+                  alpha=alpha,
+                  c=self.colour)
 
     if(plotDendrite):
+      dendLinks = []
       for row in self.dendLinks[:,:2].astype(int):
-        ax.plot(self.dend[row,0],
-                self.dend[row,1],
-                self.dend[row,2],
+        if(len(dendLinks) == 0):
+          dendLinks = list(row)
+        elif(row[0] == dendLinks[-1]):
+          dendLinks.append(row[1])
+        elif(row[1] == dendLinks[-1]):
+          dendLinks.append(row[0])
+        else:
+          ax.plot((self.dend[dendLinks,0]-plotOrigo[0])*plotScale,
+                  (self.dend[dendLinks,1]-plotOrigo[1])*plotScale,
+                  (self.dend[dendLinks,2]-plotOrigo[2])*plotScale,
+                  linestyle=lineStyle,
+                  marker=',',
+                  alpha=alpha,
+                  c=self.colour)
+
+          dendLinks = list(row)
+
+      if(len(dendLinks) > 0):
+        ax.plot((self.dend[dendLinks,0]-plotOrigo[0])*plotScale,
+                (self.dend[dendLinks,1]-plotOrigo[1])*plotScale,
+                (self.dend[dendLinks,2]-plotOrigo[2])*plotScale,
                 linestyle=lineStyle,
                 marker=',',
                 alpha=alpha,
                 c=self.colour)
-
+        
+          
     if(len(self.soma) > 0):
-      ax.scatter(self.soma[:,0],self.soma[:,1],self.soma[:,2],c=self.colour,alpha=alpha)
+      ax.scatter((self.soma[:,0]-plotOrigo[0])*plotScale,
+                 (self.soma[:,1]-plotOrigo[1])*plotScale,
+                 (self.soma[:,2]-plotOrigo[2])*plotScale,
+                 c=self.colour,alpha=alpha)
       
     plt.axis('equal')
     plt.ion()
@@ -901,11 +952,11 @@ class NeuronMorphology(object):
     
   ############################################################################
 
-  def debugPlot(self):
+  def debugPlot(self,waitFlag=True,plotStep=1,plotAxonFlag=False):
 
-    ax = self.plotNeuron()
+    ax = self.plotNeuron(plotAxon=plotAxonFlag)
 
-    if(False):
+    if(plotAxonFlag):
       for a in self.axonLinks:
         x0 = self.axon[int(a[0]),0:3]
         x1 = self.axon[int(a[1]),0:3]
@@ -918,20 +969,26 @@ class NeuronMorphology(object):
         print("ID: " + str(a[2]))      
         input(" ")
 
+    ctr = 0
     for (d,dID,dX) in zip(self.dendLinks,self.dendSecID,self.dendSecX):
       x0 = self.dend[int(d[0]),0:3]
       x1 = self.dend[int(d[1]),0:3]
       x = (x0 + x1) / 2
 
-      ax.text(x=x0[0],y=x0[1],z=x0[2],s=str(np.around(dX[0],2)),color='blue')
-      ax.text(x=x1[0],y=x1[1],z=x1[2],s=str(np.around(dX[1],2)),color='red')      
-      ax.text(x=x[0],y=x[1],z=x[2],s=str(dID),color='black')
+      #ax.text(x=x0[0],y=x0[1],z=x0[2],s=str(np.around(dX[0],2)),color='blue')
+      #ax.text(x=x1[0],y=x1[1],z=x1[2],s=str(np.around(dX[1],2)),color='red')
 
+      if(ctr % plotStep == 0):
+        ax.text(x=x[0],y=x[1],z=x[2],s=str(dID),color='black')
+      ctr += 1
+        
       print("ID: " + str(dID) + " X = " + str(np.around(dX[0],2)) + " - " \
             + str(np.around(dX[1],2)))
-      
-      input(" ")
 
+      if(waitFlag):
+        input(" ")
+
+    return ax
       
   ############################################################################
 
@@ -940,14 +997,14 @@ if __name__ == "__main__":
   
   # nm = NeuronMorphology(swc_filename='morphology/network/FSN-BE79B-3ak-compact-5.swc',verbose=True,clusterFlag=True,nClustersDend=-1,nClustersAxon=-1)
 
-  fName = 'morphology/network/v2/msn_d1-20170831/5/L0617-slide-1-section-4-1-rep-ax-cor-compact-5.swc'
-  # fName = "morphology/network/v5/fs_pv-20170919-reg10/RP110506_C1+2_IDA-rep-cor-reg10.swc"
+  # fName = "cellspecs/dspn/str-dspn-e150602_c1_D1-mWT-0728MSN01-v20190508/WT-0728MSN01-cor-rep-ax.swc"
+  fName = "cellspecs/lts/LTS_Experiment-9862_20181211/Experiment-9862corrected-cor-rep.swc"
   
-  nm = NeuronMorphology(swc_filename=fName,verbose=True)
+  nm = NeuronMorphology(swc_filename=fName,verbose=True,useCache=False)
   
   nm.place(rotation=nm.randRotationMatrix(),position=np.array([0,0,0]))
 
-  # nm.debugPlot()
+  nm.debugPlot()
   
 
   # nm.setAxonDensity("3e9*np.exp(-d/100e-6)",300e-6)
@@ -956,6 +1013,7 @@ if __name__ == "__main__":
   
   ax1 = nm.plotNeuron()
 
+  print("In main function")
   import pdb
   pdb.set_trace()
   

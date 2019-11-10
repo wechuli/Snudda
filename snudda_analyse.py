@@ -707,8 +707,9 @@ class SnuddaAnalyse(object):
     #          + "(M=" + str(maxSynapses) \
     #          + ",m=" + '%.1f' % meanSynapses \
     #          + ",sl=" + '%.0f' % (sideLen*1e6) + ")")
-    plt.title(preType + " to " + postType \
-              + " (total: " + str(np.sum(existingCon)) + ")")
+    #plt.title(preType + " to " + postType \
+    #          + " (total: " + str(np.sum(existingCon)) + ")")
+    plt.title(preType + " to " + postType)
 
 
     plt.tight_layout()
@@ -1608,7 +1609,7 @@ class SnuddaAnalyse(object):
       plt.hist(nCon,range(0,int(np.max(nCon)),binSize),align="left",density=True)
       
     plt.xlabel("Number of connected neighbours")
-    plt.ylabel("Density")
+    plt.ylabel("Probability density")
     plt.title(preType + " connecting to " + neuronType)
     plt.tight_layout()
     plt.ion()
@@ -1641,7 +1642,7 @@ class SnuddaAnalyse(object):
       plt.hist(nSyn,range(0,int(np.max(nSyn)),binSize),align="left",density=True)
       
     plt.xlabel("Number of incoming " + connectionType)
-    plt.ylabel("Density")
+    plt.ylabel("Probability density")
     plt.title(preType + " " + connectionType + " on " + neuronType)
     plt.tight_layout()
     plt.ion()
@@ -1701,6 +1702,8 @@ class SnuddaAnalyse(object):
     # Finding synapses, this might take time
     (synapses,synapseCoords) = self.networkLoad.findSynapses(postID=neuronID)
 
+    assert (synapses[:,1] == neuronID).all(), "!!!! Wrong synapses extracted"
+    
     neurons = dict([])
 
     import matplotlib.pyplot as plt
@@ -1736,8 +1739,8 @@ class SnuddaAnalyse(object):
 
     plt.pause(0.001)
 
-    import pdb
-    pdb.set_trace()
+    return axis
+
       
   ############################################################################
 
@@ -2572,7 +2575,7 @@ class SnuddaAnalyse(object):
   ############################################################################
 
   # Inspired by:
-  # Nao Chuhma, Kenji F. Tanaka, René Hen and Stephen Rayport 2011
+  # Nao Chuhma, Kenji F. Tanaka, Rene Hen and Stephen Rayport 2011
   #
   # 10% of a neuron type are marked, fraction of presynaptic neurons
   # out of total population
@@ -2654,7 +2657,6 @@ if __name__ == "__main__":
   #na.simpleMotif("iSPN","iSPN","iSPN")
   #na.simpleMotif("dSPN","dSPN","iSPN")
   # na.analyseSingleMotifs("dSPN")
-
 
   
   na.nearestPreNeighbourDistance("LTS","dSPN")

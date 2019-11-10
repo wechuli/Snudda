@@ -14,6 +14,11 @@
 #
 ############################################################################
 
+# Plot all sections
+# [neuron.h.psection(x) for x in neuron.h.allsec()]
+
+
+
 from mpi4py import MPI # This must be imported before neuron, to run parallel
 from neuron import h, gui
 import h5py
@@ -340,6 +345,9 @@ class SnuddaSimulate(object):
         # We need to instantiate the cell
         try:
           self.neurons[ID].instantiate(sim=self.sim)
+
+          self.setRestingVoltage(ID)
+          
         except:
           import traceback
           tstr = traceback.format_exc()
@@ -504,6 +512,9 @@ class SnuddaSimulate(object):
     # Neuron wants it in microsiemens??!
     conductance = self.synapses[startRow:endRow,11]*1e-6
     parameterID = self.synapses[startRow:endRow,12]
+
+    voxelCoords = self.synapses[startRow:endRow,2:5]
+    self.verifySynapsePlacement(dendSections,secX,destID,voxelCoords)
     
     for (srcID,section,sectionX,sTypeID,axonDist,cond,pID) \
       in zip(sourceIDs,dendSections,secX,synapseTypeID,
@@ -550,12 +561,12 @@ class SnuddaSimulate(object):
                        for x in self.gapJunctions[:,1]])[0]
 
     # GJIDoffset = self.network_info["GJIDoffset"]
-    GJIDoffset = 10*self.nNeurons
+    GJIDoffset = 100*self.nNeurons
     GJGIDsrcA = GJIDoffset + 4*GJidxA
     GJGIDsrcB = GJIDoffset + 4*GJidxB+1
 
-    GJGIDdestA = GJIDoffset + 4*GJidxA +2 # +1
-    GJGIDdestB = GJIDoffset + 4*GJidxB +3 # +0 
+    GJGIDdestA = GJIDoffset + 4*GJidxA + 1#+2 # +1
+    GJGIDdestB = GJIDoffset + 4*GJidxB + 0 #+3 # +0 
 
     neuronIDA = self.gapJunctions[GJidxA,0]
     neuronIDB = self.gapJunctions[GJidxB,1]
@@ -600,6 +611,9 @@ class SnuddaSimulate(object):
     (neuronID,compartment,segX,GJGIDsrc,GJGIDdest,cond) \
      = self.findLocalGapJunctions()
 
+    #import pdb
+    #pdb.set_trace()
+    
     try:
       # WHY??!
       # ValueError: too many values to unpack (expected 6)
@@ -855,7 +869,7 @@ class SnuddaSimulate(object):
 
   def addSynapse(self, cellIDsource, dendCompartment, sectionDist, conductance,
                  parameterID,synapseTypeID,axonDist=None):
-
+    
     # You can not locate a point process at
     # position 0 or 1 if it needs an ion   
     if(sectionDist == 0.0):
@@ -958,6 +972,9 @@ class SnuddaSimulate(object):
                      gGapJunction=0.5e-9, \
                      GID=None): # GID unused??
 
+    assert False, "There is something fishy with the parallel gap junctions. Please run with them disabled for now"
+
+    
     #self.writeLog("Adding src = " + str(GIDsourceGJ) + ", dest = " + str(GIDdestGJ))
 
     # If neuron complains, make sure you have par_ggap.mod 
@@ -1313,6 +1330,27 @@ class SnuddaSimulate(object):
 
   ############################################################################
 
+  def setRestingVoltage(self,neuronID,restVolt=None):
+
+    if(restVolt is None):
+      # If no resting voltage is given, extract it from parameters
+      restVolt = [x for x in self.neurons[neuronID].parameters \
+                  if x["param_name"] == "v_init"][0]["value"]
+      self.writeLog("Neuron " + self.neurons[neuronID].name \
+                    + " resting voltage = " + str(restVolt))
+    
+    soma = [x for x in self.neurons[neuronID].icell.soma]
+    axon = [x for x in self.neurons[neuronID].icell.axon]
+    dend = [x for x in self.neurons[neuronID].icell.dend]
+
+    cell = soma+axon+dend
+
+    for sec in cell:
+      for seg in sec.allseg():
+        seg.v = restVolt
+
+  ############################################################################
+  
   def addVirtualNeuronInput(self):
 
     self.writeLog("Adding inputs from virtual neurons")
@@ -1468,12 +1506,15 @@ class SnuddaSimulate(object):
             seg.v = cell.vinit
         
   def run(self,t=1000.0):
-    
     #self.sim.neuron.h.v_init = -78
     #self.sim.neuron.h.finitialize(-78)
+    # ----
+    #self.set_vinit()
+    #self.sim.neuron.h.finitialize()
+    # TODO remove? check solution
+    # Asked on neuron, check answer:
     # https://www.neuron.yale.edu/phpBB/viewtopic.php?f=2&t=4161&p=18021
-    # -> solution implemented in function:
-    self.set_vinit()
+    
     
     # Make sure all processes are synchronised
     self.pc.barrier()
@@ -1519,6 +1560,116 @@ class SnuddaSimulate(object):
             spikeFile.write('%.3f\t%d\n' %(t,id))
       self.pc.barrier()
 
+  ############################################################################
+
+  # secList is a list of sections
+  # secXList is a list of X values 0 to 1.0
+  # destID is the ID of the neuron receiving synapse (one value!)
+  # voxel coords are the voxel that the synapse is in
+
+  # We want to check that voxel coords transformed to local coordinate system
+  # of neuron matches with where neuron places the synapse
+  
+  def verifySynapsePlacement(self,secList,secXList,destID,voxelCoords):
+
+    # print("Running verify synapse placement")
+
+    simulationOrigo = self.network_info["simulationOrigo"]
+    voxelSize = self.network_info["voxelSize"]
+    neuronPosition = self.network_info["neurons"][destID]["position"]
+    neuronRotation = self.network_info["neurons"][destID]["rotation"]
+
+    # Transform voxel coordinates to local neuron coordinates to match neuron
+    synapsePos = (voxelSize*voxelCoords+simulationOrigo-neuronPosition)*1e6
+
+    try:
+      synPosNrn = np.zeros((len(secList),3))
+
+      for i,(sec,secX) in enumerate(zip(secList,secXList)):
+        nPoints = h.n3d(sec=sec)
+        arcLen = h.arc3d(nPoints-1,sec=sec)
+        idx = int(np.round(secX*(nPoints-1)))
+        arcLenX = h.arc3d(idx,sec=sec)
+
+        #print("X : " + str(secX) + " = " + str(arcLenX/arcLen) + " ???")
+        
+        synPosNrn[i,0] = h.x3d(idx,sec=sec)
+        synPosNrn[i,1] = h.y3d(idx,sec=sec)
+        synPosNrn[i,2] = h.z3d(idx,sec=sec)
+    except:
+      import traceback
+      tstr = traceback.format_exc()
+      self.writeLog(tstr)
+      import pdb
+      pdb.set_trace()
+     
+      
+    # We need to rotate the neuron to match the big simulation
+    # !!! OBS, this assumes that some is in 0,0,0 local coordinates
+    synPosNrnRot = np.transpose(np.matmul(neuronRotation, \
+                                          np.transpose(synPosNrn)))
+
+    synMismatch = np.sqrt(np.sum((synPosNrnRot - synapsePos)**2,axis=1))
+
+    badThreshold = 50
+    nBad = np.sum(synMismatch > badThreshold)
+
+    
+    if(nBad > 0):
+      # If this happens, check that Neuron does not warn for removing sections
+      # due to having only one point
+      self.writeLog("!!! Found " + str(nBad) + " synapses on " \
+                    + self.network_info["neurons"][destID]["name"] \
+                    + "( " + str(destID) + ") " \
+                    " that are further than " + str(badThreshold) + "mum away."\
+                    + " morphology: " \
+                    + self.network_info["neurons"][destID]["morphology"])
+
+      ### DEBUG PLOT!!!
+
+      if(True):
+        import matplotlib.pyplot as plt
+        plt.figure()
+
+        somaDist = np.sqrt(np.sum(synapsePos**2,axis=1))
+        plt.scatter(somaDist*1e6,synMismatch)
+        plt.ion()
+        plt.show()
+        plt.title(self.network_info["neurons"][destID]["name"])
+
+        from mpl_toolkits.mplot3d import Axes3D
+        fig=plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        ax.scatter(synapsePos[:,0],
+                   synapsePos[:,1],
+                   synapsePos[:,2],color="red")
+        ax.scatter(synPosNrnRot[:,0],
+                   synPosNrnRot[:,1],
+                   synPosNrnRot[:,2],color="black",s=50)
+
+        if(False):
+          # Draw neuron
+          allSec = [x for x in neuron.h.allsec()  if "axon" not in str(x)]
+          for x in np.linspace(0,1,10):
+            secPos =  np.array([[h.x3d(x,sec=sec),
+                                 h.y3d(x,sec=sec),
+                                 h.z3d(x,sec=sec)] \
+                                for sec in allSec])
+
+            ax.scatter(secPos[:,0],secPos[:,1],secPos[:,2],color="blue")
+        
+        import pdb
+        pdb.set_trace()
+      
+    #voxelCoords * 
+    
+    # Get local neuron position
+    #self.neurons["position"]
+    
+    #for sec,secX
+    #h.x3d(
+      
   ############################################################################
 
 # File format for csv voltage file:
@@ -1691,8 +1842,7 @@ if __name__ == "__main__":
   # No inhibiton between cells if 0
   disableSynapses = 0
   
-  # TODO: hard coded to turn of gj -> fix in arguments
-  disableGJ = 1 #	 args.disableGJ
+  disableGJ = args.disableGJ
   assert disableGJ, "Please use --disableGJ for now, need to test code"
   if(disableGJ):
     print("!!! WE HAVE DISABLED GAP JUNCTIONS !!!")

@@ -102,7 +102,6 @@ class NetworkPlotSpikeRaster(object):
     tIdx    = np.where(self.time >= skipTime)[0]
     maxt    = max(self.time)
     
-
     cols2 = [colours[cellTypes[int(s)]] for s in self.spikeID]
     
     ax.scatter(self.time[tIdx]-skipTime,
@@ -210,8 +209,6 @@ class NetworkPlotSpikeRaster(object):
       plotLookup[p] = i
 
     return plotLookup
-
-  ############################################################################
 
 
     
