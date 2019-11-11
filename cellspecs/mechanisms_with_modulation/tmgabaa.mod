@@ -1,9 +1,29 @@
 TITLE GABA_A synapse with short-term plasticity
 
+COMMENT
+
+neuromodulation is added as functions:
+    
+    modulation = 1 + damod*(maxMod-1)*level
+
+where:
+    
+    damod  [0]: is a switch for turning modulation on or off {1/0}
+    maxMod [1]: is the maximum modulation for this specific channel (read from the param file)
+                e.g. 10% increase would correspond to a factor of 1.1 (100% +10%) {0-inf}
+    level  [0]: is an additional parameter for scaling modulation. 
+                Can be used simulate non static modulation by gradually changing the value from 0 to 1 {0-1}
+
+[] == default values
+{} == ranges
+
+ENDCOMMENT
+
 NEURON {
     POINT_PROCESS tmGabaA
     RANGE tau1, tau2, e, i, q
     RANGE tau, tauR, tauF, U, u0
+    RANGE damod, maxMod, level
     NONSPECIFIC_CURRENT i
 }
 
@@ -23,6 +43,10 @@ PARAMETER {
     tauF = 0 (ms)    : tauF >= 0
     U = 0.1 (1) <0, 1>
     u0 = 0 (1) <0, 1>
+    damod = 0
+    maxMod = 1
+    level = 0
+    
 
 }
 
@@ -50,7 +74,7 @@ INITIAL {
 
 BREAKPOINT {
     SOLVE state METHOD cnexp
-    g = B - A
+    g = (B - A) * modulation()
     i = g*(v - e)
 }
 
@@ -80,6 +104,13 @@ NET_RECEIVE(weight (uS), y, z, u, tsyn (ms)) {
     B = B + weight*factor*x*u / U
     y = y + x*u
     tsyn = t
+}
+
+
+FUNCTION modulation() {
+    : returns modulation factor
+    
+    modulation = 1 + damod*(maxMod-1)*level 
 }
 
 COMMENT

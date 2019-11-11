@@ -110,6 +110,7 @@ class SnuddaSimulate(object):
     
     self.netConList = [] # Avoid premature garbage collection
     self.synapseList = []
+    self.synapseDict = {} # added to map synapse to cell
     self.gapJunctionList = []
     self.externalStim = dict([])
     self.tSave = []
@@ -528,7 +529,8 @@ class SnuddaSimulate(object):
                         synapseTypeID=sTypeID,
                         axonDist=axonDist,
                         conductance=cond,
-                        parameterID=pID)
+                        parameterID=pID,
+                        destID=destID)
       except:
         import traceback
         tstr = traceback.format_exc()
@@ -868,7 +870,10 @@ class SnuddaSimulate(object):
   ############################################################################
 
   def addSynapse(self, cellIDsource, dendCompartment, sectionDist, conductance,
-                 parameterID,synapseTypeID,axonDist=None):
+                 parameterID,synapseTypeID,axonDist=None,destID=None):
+    
+    # initiate synapse dict
+    if destID and destID not in self.synapseDict: self.synapseDict[destID] = []
     
     # You can not locate a point process at
     # position 0 or 1 if it needs an ion   
@@ -959,6 +964,7 @@ class SnuddaSimulate(object):
       
       self.netConList.append(nc)
       self.synapseList.append(syn)
+      if destID: self.synapseDict[destID].append(syn)
     
     return syn
 
@@ -1138,6 +1144,79 @@ class SnuddaSimulate(object):
   
       
   ############################################################################
+  # dopamine modulation
+  ############################################################################
+
+  def setGABAmod(self, transient=0):
+    '''
+    set modulation of sgabaergic input using stored data (list)
+    '''
+    # TODO: draw from rang instead of fixed? 
+    #       -> move parameters to json file
+    modulation = {  'iSPN': [1.0, 'no source. GABAb reduced ~60%'],
+                    'dSPN': [0.8, '~-15-30% -> see Lindroos et al., 2018'],
+                    'ChIN': [1.0, '~ -30% - +40%; D2R-type and D1R-type, respectively'],
+                    'LTS':  [1.0, 'no source, reduced?'],
+                    'FSN':  [0.6, '1 source ~ -40%']   
+                    }
+    
+    for neuronID,synlist in self.synapseDict.items():
+      for syn in synlist:
+        # get modualtion (based on cell type)
+        nname       = self.neurons[neuronID].name.split('_')[0]
+        maxMod      = modulation[nname][0]
+        
+        # set modulation    
+        syn.maxMod  = maxMod
+        syn.damod   = 1
+        
+        if transient:
+          # play level parameter
+          transient.play(syn._ref_level, self.sim.neuron.h.dt)
+        else:
+          syn.level = 1   # constant, full modulation.
+  
+  
+  # ----------------------------------------------------------
+  
+  def setGLUTmod(self, transient=0):
+    '''
+    set modulation of glutamatergic input using stored data (dict of list of tuple)
+    '''  
+    # TODO: draw from rang instead of fixed? 
+    #       -> move parameters to json file
+    modulation = {  'iSPN': [0.8,0.8, '~a:-30-0%; ~n:-40-0%'],
+                    'dSPN': [1.2,1.3, '~a:+0-30%; ~n:+20-50% -> see Lindroos et al., 2018'],
+                    'ChIN': [1.0,1.0, 'no source, likely reduced trough presynaptic effect?'],
+                    'LTS':  [1.0,1.0, 'no source, likely reduced trough presynaptic effect?'],
+                    'FSN':  [1.0,1.0, 'no source, likely reduced trough presynaptic effect?']   
+                    }
+    
+    for neuronID,synlist in self.externalStim.items():
+        # get modulation (based on cell type)
+        nname = self.neurons[neuronID].name.split('_')[0]
+        
+        maxModA = modulation[nname][0]
+        maxModN = modulation[nname][1] 
+        
+        print(nname,maxModA,maxModN)
+        
+        # set modulation   
+        for syntuple in synlist: 
+            syn = syntuple[3]
+            syn.maxModAMPA  = maxModA
+            syn.maxModNMDA  = maxModN
+            syn.damod       = 1
+            if transient:
+                # play level parameter
+                transient.play(syn._ref_level, self.sim.neuron.h.dt)
+            else:
+                syn.level = 1   # constant, full modulation.
+            
+  
+  
+  # ----------------------------------------------------------
+  
   def setDopamineModulation(self,sec,transient,modList=[]):
     # maxMod is set by params_with_modulation. 
     # here damod and level is set
@@ -1156,17 +1235,17 @@ class SnuddaSimulate(object):
               if not transient: mech.level = 1
               else:
                 transient.play(mech._ref_level, self.sim.neuron.h.dt)
-                self.modTrans.append( transient )
               
   
-  def applyDopamine(self, cellID=None, play=0):
+  # ----------------------------------------------------------
+  
+  
+  def applyDopamine(self, cellID=None, transient=0):
     ''' activate dopamine modulation
-    play argument decides how the modulation is implemented:
+    transient argument decides how the modulation is implemented:
         0 - bath apply (instant full modulation)
         else - plays into level variable of mech.
     '''
-    if play: transient = self.sim.neuron.h.Vector(play)
-    else   : transient = play
     
     if(cellID is None):
       cellID = self.neuronID
@@ -1825,7 +1904,7 @@ if __name__ == "__main__":
   else:
     # Save neuron voltage
     if(args.voltOut == "default"):
-      voltFile = saveDir + 'network-voltage-' + SlurmID + '.csv'
+      voltFile = saveDir + 'network-voltageDA-' + SlurmID + '.csv'
     else:
       voltFile = args.voltOut
       
@@ -1839,7 +1918,7 @@ if __name__ == "__main__":
   
   # ======================================================================
   
-  # No inhibiton between cells if 0
+  # No inhibiton between cells if 1
   disableSynapses = 0
   
   disableGJ = args.disableGJ
@@ -1890,8 +1969,16 @@ if __name__ == "__main__":
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
   #v = [alpha(ht, 300, 100) for ht in np.arange(0,1500,0.025)]
-  #v = [1 if ht>300 else 0 for ht in np.arange(0,1500,0.025)]
-  #sim.applyDopamine(play=v)
+  vintr = [1 if (ht>1000 and ht<2000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
+  v1 = sim.sim.neuron.h.Vector(vintr)
+  vgaba = [1 if (ht>3000 and ht<4000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
+  v2 = sim.sim.neuron.h.Vector(vgaba)
+  vglut = [1 if (ht>5000 and ht<6000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
+  v3 = sim.sim.neuron.h.Vector(vglut)
+  #sim.modTrans.append( vneuron )
+  sim.applyDopamine(transient=v1)
+  sim.setGABAmod(   transient=v2)
+  sim.setGLUTmod(   transient=v3)
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds
