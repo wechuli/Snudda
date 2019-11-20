@@ -593,8 +593,8 @@ class SnuddaInit(object):
     pfFSFS = None # Gittis 2010?
     pfFSLTS = None
 
-    pfFSdSPN = "synapses/trace_table.txt-FD-model-parameters.json"
-    pfFSiSPN = "synapses/trace_table.txt-FI-model-parameters.json"
+    pfFSdSPN = "synapses/v1/trace_table.txt-FD-model-parameters.json"
+    pfFSiSPN = "synapses/v1/trace_table.txt-FI-model-parameters.json"
 
     
     # Increased from a3=0.1 to a3=0.7 to match FS-FS connectivity from Gittis
@@ -651,7 +651,7 @@ class SnuddaInit(object):
                            targetName="FSN",
                            connectionType="GapJunction",
                            distPruning=None,
-                           f1=None, softMax=10, mu2=2, a3=0.7,
+                           f1=None, softMax=10, mu2=2, a3=0.9,
                            conductance=FSgGapJunction,
                            channelParamDictionary=None)
 
@@ -677,8 +677,8 @@ class SnuddaInit(object):
     P12withinChannel = MSP12 * self.channelMSNmodifier
     P12betweenChannel = MSP12 *(1 +(1-self.channelMSNmodifier) / self.nChannels)
 
-    pfdSPNdSPN = "synapses/trace_table.txt-DD-model-parameters.json"
-    pfdSPNiSPN = "synapses/trace_table.txt-DI-model-parameters.json"
+    pfdSPNdSPN = "synapses/v1/trace_table.txt-DD-model-parameters.json"
+    pfdSPNiSPN = "synapses/v1/trace_table.txt-DI-model-parameters.json"
     pfdSPNChIN = None
     
     self.addNeuronTarget(neuronName="dSPN",
@@ -747,8 +747,8 @@ class SnuddaInit(object):
     P22withinChannel = MSP22 * self.channelMSNmodifier
     P22betweenChannel = MSP22 *(1 +(1-self.channelMSNmodifier) / self.nChannels)
 
-    pfiSPNdSPN = "synapses/trace_table.txt-ID-model-parameters.json"
-    pfiSPNiSPN = "synapses/trace_table.txt-II-model-parameters.json"    
+    pfiSPNdSPN = "synapses/v1/trace_table.txt-ID-model-parameters.json"
+    pfiSPNiSPN = "synapses/v1/trace_table.txt-II-model-parameters.json"    
     pfiSPNChIN = None
 
     
@@ -819,7 +819,7 @@ class SnuddaInit(object):
                          targetName="dSPN",
                          connectionType="GABA",
                          distPruning=None,
-                         f1=1.0, softMax=20, mu2=15,a3=0.1,
+                         f1=1.0, softMax=15, mu2=15,a3=0.1,
                          conductance=ChINgGABA,
                          parameterFile=pfChINdSPN,
                          modFile="tmGabaA",
@@ -831,7 +831,7 @@ class SnuddaInit(object):
                          targetName="iSPN",
                          connectionType="GABA",
                          distPruning=None,
-                         f1=1.0, softMax=20, mu2=10,a3=0.1,
+                         f1=1.0, softMax=12, mu2=10,a3=0.1,
                          conductance=ChINgGABA,
                          parameterFile=pfChINiSPN,
                          modFile="tmGabaA",
@@ -844,7 +844,7 @@ class SnuddaInit(object):
                          targetName="LTS",
                          connectionType="ACh",
                          distPruning=None,
-                         f1=1.0, softMax=20, mu2=10,a3=None,
+                         f1=1.0, softMax=12, mu2=10,a3=None,
                          conductance=ChINgACh,
                          parameterFile=pfChINLTS,
                          modFile="tmGabaA",
@@ -1008,14 +1008,15 @@ class SnuddaInit(object):
 
     # We should have both ipsi and contra, M1 and S1 input, for now
     # picking one
-    cortextSynPar = "synapses/M1_Analysis_RH_extr_UP.pxp-traceList-MSND1-require-H20-model-parameters.json"
+    cortexSynParMS = "synapses/v2/M1RH_Analysis_190925.h5-parameters-MS.json"
+    cortexSynParFS = "synapses/v2/M1RH_Analysis_190925.h5-parameters-FS.json"    
     
     self.addNeuronTarget(neuronName="CortexAxon",
                          targetName="dSPN",
                          connectionType="AMPA_NMDA",
                          distPruning=None,
                          f1=1.0, softMax=3, mu2=2.4,a3=None,
-                         parameterFile=cortexSynPar,
+                         parameterFile=cortexSynParMS,
                          modFile="tmGlut",
                          conductance=CortexGlutCond,
                          channelParamDictionary=None)
@@ -1025,7 +1026,7 @@ class SnuddaInit(object):
                          connectionType="AMPA_NMDA",
                          distPruning=None,
                          f1=1.0, softMax=3, mu2=2.4,a3=None,
-                         parameterFile=cortexSynPar,
+                         parameterFile=cortexSynParMS,
                          modFile="tmGlut",
                          conductance=CortexGlutCond,
                          channelParamDictionary=None)
@@ -1035,7 +1036,7 @@ class SnuddaInit(object):
                          connectionType="AMPA_NMDA",
                          distPruning=None,
                          f1=1.0, softMax=3, mu2=2.4,a3=None,
-                         parameterFile=cortexSynPar,
+                         parameterFile=cortexSynParFS,
                          modFile="tmGlut",
                          conductance=CortexGlutCond,
                          channelParamDictionary=None)
@@ -1075,9 +1076,8 @@ class SnuddaInit(object):
 
     # Define targets
 
-    thalamusSynParD1 = "synapses/TH_Analysis_extr_UP.pxp-traceList-MSND1-require-H20-model-parameters.json"
-    thalamusSynParD2 = "synapses/TH_Analysis_extr_UP.pxp-traceList-MSND2-require-H20-model-parameters.json"
-    thalamusSynParFS = "synapses/TH_Analysis_extr_UP.pxp-traceList-FS-require-H20-model-parameters.json"
+    thalamusSynParMS = "synapses/v2/TH_Analysis_191001.h5-parameters-MS.json"
+    thalamusSynParFS = "synapses/v2/TH_Analysis_191001.h5-parameters-FS.json"
 
     
     ThalamusGlutCond = [1e-9,0.1e-9]
@@ -1088,7 +1088,7 @@ class SnuddaInit(object):
                          distPruning=None,
                          f1=1.0, softMax=3, mu2=2.4,a3=None,
                          conductance=ThalamusGlutCond,
-                         parameterFile=thalamusSynParD1,
+                         parameterFile=thalamusSynParMs,
                          modFile="tmGlut",
                          channelParamDictionary=None)
 
@@ -1098,7 +1098,7 @@ class SnuddaInit(object):
                          distPruning=None,
                          f1=1.0, softMax=3, mu2=2.4,a3=None,
                          conductance=ThalamusGlutCond,
-                         parameterFile=thalamusSynParD2,
+                         parameterFile=thalamusSynParMS,
                          modFile="tmGlut",
                          channelParamDictionary=None)
 

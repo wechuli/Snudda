@@ -94,7 +94,7 @@ class SnuddaSimulate(object):
     # !!! different for AMPA and GABA?
     self.synapseWeight = 10.0 # microsiemens 
     self.synapseDelay = 1      # ms 
-    self.spikeThreshold = 10
+    self.spikeThreshold = -20
     self.axonSpeed = 0.8 # Tepper and Lee 2007, Wilson 1986, Wilson 1990
                          # refs taken from Damodaran et al 2013
 
@@ -178,7 +178,8 @@ class SnuddaSimulate(object):
                   + ": Loading network from " + networkFile)
 
     from snudda_load import SnuddaLoad
-    self.network_info = SnuddaLoad(networkFile).data
+    self.snuddaLoader = SnuddaLoad(networkFile)
+    self.network_info = self.snuddaLoader.data
     
     self.synapses = self.network_info["synapses"]
     self.gapJunctions = self.network_info["gapJunctions"]
@@ -254,8 +255,12 @@ class SnuddaSimulate(object):
         # Save data as a list, we dont need the keys
         parData = []
         for pd in parDataDict:
-          parData.append(parDataDict[pd])
-        
+          if("synapse" in parDataDict[pd]):
+            parData.append(parDataDict[pd]["synapse"])
+          else:
+            self.writeLog("WARNING: Old data format in parameter file " \
+                          + str(parFile))
+            parData.append(parDataDict[pd])
       else:
         parData = None
 
@@ -949,6 +954,7 @@ class SnuddaSimulate(object):
       nc.delay = synapseDelay
       nc.threshold = self.spikeThreshold
 
+      # Prevent garbage collection in python
       self.netConList.append(nc)
       self.synapseList.append(syn)
 
@@ -1372,13 +1378,18 @@ class SnuddaSimulate(object):
           # Get the modifications of synapse parameters, specific to
           # this synapse
           if(paramList is not None and len(paramList) > 0):
-            synParams = paramList[paramID % len(paramList)]
+            synParams = paramList[paramID % len(paramList)]["synapse"]
 
             for par in synParams:
               if(par == "expdata"):
                 # Not a parameter
                 continue
 
+              if(par == "cond"):
+                # Ignoring cond value specified for synapse, using the
+                # one specified in the input information instead
+                continue
+              
               try:
 
                 evalStr = "syn." + par + "=" + str(synParams[par])
@@ -1538,6 +1549,15 @@ class SnuddaSimulate(object):
     
   
   ############################################################################
+
+  def addRecordingOfType(self,neuronType,nNeurons=None):
+
+    cellID = self.snuddaLoader.getCellIDofType(neuronType=neuronType,
+                                               nNeurons=nNeurons)
+
+    self.addRecording(cellID)
+    
+  ############################################################################
   
   def addRecording(self,cellID=None,sideLen=None):
     self.writeLog("Adding somatic recordings")
@@ -1545,6 +1565,8 @@ class SnuddaSimulate(object):
     if(cellID is None):
       cellID = self.neuronID
 
+    # Does nothing if sideLen is not specified (otherwise, give neurons in
+    # the centre)
     cellID = self.centreNeurons(sideLen=sideLen,neuronID=cellID)
 
     cells = dict((k,self.neurons[k]) \
@@ -1964,7 +1986,8 @@ if __name__ == "__main__":
   #sim.addCurrentFromProtocol()
   
   if(voltFile is not None):
-    sim.addRecording(sideLen=None) # Side len let you record from a subset
+    #sim.addRecording(sideLen=None) # Side len let you record from a subset
+    sim.addRecordingOfType("dSPN",5) # Side len let you record from a subset
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
