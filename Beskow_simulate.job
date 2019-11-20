@@ -1,10 +1,10 @@
 #!/bin/bash -l
-#SBATCH -t 2:59:00
+#SBATCH -t 5:59:00
 #SBATCH --time-min=0:59:00
 #SBATCH -J snudda_simulate
 #SBATCH -A 2019-3-304
-#SBATCH -o save/output-snudda_simulate.o%j
-#SBATCH -e save/error-snudda_simulate.e%j
+#SBATCH -o largo.o%j
+#SBATCH -e largo.e%j
 #SBATCH --nodes=7-15
 #SBATCH --ntasks-per-node=32
 
@@ -33,12 +33,12 @@ export CRAY_ROOTFS=DSL
 
 # Remove "special" old directory
 rm -r x86_64
-nrnivmodl cellspecs/mechanisms
+nrnivmodl cellspecs/mechanisms_with_modulation
 
 # Synapse file
 #NETWORK_INFO_FILE=save/network-connect-synapse-file-2001927.hdf5
 #NETWORK_INFO_FILE=last
-NETWORK_DIR=TegnerRun.849262
+NETWORK_DIR=largonet
 NETWORK_INFO_FILE=$NETWORK_DIR/network-pruned-synapses.hdf5
 
 NETWORK_INPUT_FILE=$NETWORK_DIR/input-spikes.hdf5
@@ -53,7 +53,7 @@ NETWORK_INPUT_FILE=$NETWORK_DIR/input-spikes.hdf5
 #aprun -n $N_WORKERS /cfs/klemming/nobackup/h/hjorth/StriatumNetwork/model/x86_64/special -mpi -python3 snudda_simulate.py $NETWORK_INFO_FILE $NETWORK_INPUT_FILE
 #aprun -n $N_WORKERS /cfs/klemming/nobackup/h/hjorth/StriatumNetwork/model/x86_64/special -mpi -python snudda_simulate.py $NETWORK_INFO_FILE $NETWORK_INPUT_FILE
 
-srun -n $N_WORKERS /cfs/klemming/nobackup/"${USER:0:1}"/$USER/Snudda/x86_64/special -mpi -python snudda_simulate.py $NETWORK_INFO_FILE $NETWORK_INPUT_FILE --disableGJ
+srun -n $N_WORKERS /cfs/klemming/nobackup/"${USER:0:1}"/$USER/Snudda/x86_64/special -mpi -python snudda_simulate.py $NETWORK_INFO_FILE $NETWORK_INPUT_FILE --disableGJ --time 2.3 --voltOut largonet/simulation/vm-traces-txt
 
 
 # Original version, start neuron from python, does not work on beskow
