@@ -169,6 +169,8 @@ class NetworkPlotTraces():
       ax = fig.axes[0]
       ax.set_yticklabels([])
     
+    plt.ylim([-0.1,0.05])
+    
     plt.tight_layout()
     plt.ion()
     plt.show()
@@ -180,7 +182,7 @@ class NetworkPlotTraces():
     
     if(len(typesInPlot) > 1):
       figName = 'figures/Network-spikes-' + str(self.ID) \
-        + "-".join(typesInPlot) + "-DAtrans300colour.png"
+        + "-".join(typesInPlot) + "-colour.png"
     else:
       figName = 'figures/Network-spikes-' + str(self.ID) \
         + "-" + typesInPlot.pop() + "-colour.png"
@@ -235,10 +237,11 @@ if __name__ == "__main__":
     #npt.plotTraces(offset=-0.2,traceID=[5,54],skipTime=0.5)    
     #npt.plotTraces(offset=0.2,traceID=[1,5,7,15,16],skipTime=0.2)
 
-    plotOffset = 0 # -0.2
-    skipTime = 0 #0.5
-    nTracesMax = 5
-    comp=1
+    plotOffset  = 0 # -0.2
+    skipTime    = 0 #0.5
+    nTracesMax  = 5
+    comp        = 0
+    
     npt.plotTraceNeuronType(neuronType="dSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
     npt.plotTraceNeuronType(neuronType="iSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
     npt.plotTraceNeuronType(neuronType="FSN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
