@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
   connectNeurons = False
 
-  simName = "networks/customMedium"
+  simName = "networks/custMed9s"
   #simName = "networks/FSmorphTest2orig"
   #simName = "networks/FSmorphTest1b"
   #simName = "LTStest"

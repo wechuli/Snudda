@@ -1367,10 +1367,36 @@ class SnuddaSimulate(object):
           syn = channelModule(section(sectionX))
           nc = h.NetCon(vs,syn)
           
-          nc.delay = 0.0
-          # Should weight be between 0 and 1, or in microsiemens?
-          nc.weight[0] = neuronInput["conductance"].value * 1e6 # !! what is unit? microsiemens?
-          nc.threshold = 0.1
+          # set weights based on individual (scale factor individual--svenska for invandrare)
+          # rheobase [const,phasic (pA)]; 
+          #     FSN -  FS5:[248,260], FS1:[183,275], FS16:[200,170], FS2:[8,242]
+          #     ispn - c4:[4,252], c11:[109,327], c1:[3,322], c10:[1,171]
+          #     dspn - c1:[103,342], c10:[205,333], c6:[60,283], c9:[203,416]
+          sfi   =   {'iSPN':   
+                       {'str-ispn-e151123_c1_D2-mWT-P270-09-v20190527':1.3*0.8,
+                        'str-ispn-e150917_c11_D2-mWT-MSN1-v20190603':  1.3*0.8,
+                        'str-ispn-e160118_c10_D2-m46-3-DE-v20190529':  0.5*0.8,
+                        'str-ispn-e150908_c4_D2-m51-5-DE-v20190611':   1.0*0.8  },
+                     'dSPN':
+                       {'str-dspn-e150602_c1_D1-mWT-0728MSN01-v20190508': 1.0*1.01,
+                        'str-dspn-e150917_c6_D1-m21-6-DE-v20190503':      1.0*1.01,
+                        'str-dspn-e150917_c10_D1-mWT-P270-20-v20190521':  1.2*1.01,
+                        'str-dspn-e150917_c9_d1-mWT-1215MSN03-v20190521': 1.5*1.01 },
+                     'FSN':
+                       {'str-fs-e160628_FS2-mMTC180800A-IDB-v20190226': 1.0*0.95,
+                        'str-fs-e161205_FS1-mMTC180800A-IDB-v20190312': 4.0*0.95,
+                        'str-fs-e161024_FS16-mDR-rat-Mar-13-08-1-536-R-v20190225': 1.0*0.95,
+                        'str-fs-e180418_FS5-mMTC251001A-IDB-v20190301': 2.0*0.95 },
+                     'ChIN':
+                       {'str-chin-e170614_cell6-m17JUL301751_170614_no6_MD_cell_1_x63-v20190710':1.0},
+                     'LTS':
+                       {'LTS_Experiment-9862_20181211':1.0}
+                    }
+          ctype = name.split('_')[0]
+          cell = self.config[name]["morphology"].split('/')[2]
+          nc.weight[0]  = neuronInput["conductance"].value * 1e6 * sfi[ctype][cell]      # microsiemens
+          nc.threshold  = 0.1
+          nc.delay      = 0.0
 
           if(False):
             print("Weight: " + str(nc.weight[0]))
@@ -1546,7 +1572,7 @@ class SnuddaSimulate(object):
     print("Centering: Keeping " + str(len(cID)) + "/" + str(len(neuronID)))
         
     return cID
-    
+  
   
   ############################################################################
 
@@ -1555,12 +1581,15 @@ class SnuddaSimulate(object):
     cellID = self.snuddaLoader.getCellIDofType(neuronType=neuronType,
                                                nNeurons=nNeurons)
 
-    self.addRecording(cellID)
+    self.addRecording(cellID) 
+    
     
   ############################################################################
   
   def addRecording(self,cellID=None,sideLen=None):
     self.writeLog("Adding somatic recordings")
+    
+    print(cellID, self.neuronID)
     
     if(cellID is None):
       cellID = self.neuronID
@@ -1570,7 +1599,7 @@ class SnuddaSimulate(object):
     cellID = self.centreNeurons(sideLen=sideLen,neuronID=cellID)
 
     cells = dict((k,self.neurons[k]) \
-                 for k in cellID if not self.isVirtualNeuron[k])
+                 for k in cellID if k in self.neurons and not self.isVirtualNeuron[k])
 
     if(len(self.tSave) == 0 or self.tSave is None):
       self.tSave = self.sim.neuron.h.Vector()
@@ -1780,9 +1809,12 @@ class SnuddaSimulate(object):
   
   def writeVoltage(self,outputFile="save/traces/network-voltage",
                    downSampling=20,
-                   use_name=0):
+                   use_name=0,
+                   sample=0):
     for i in range(int(self.pc.nhost())):
       self.pc.barrier()
+      
+      if sample and i > 3: break
       
       if(i == int(self.pc.id())):
         if(i == 0):
@@ -1808,7 +1840,7 @@ class SnuddaSimulate(object):
          
       self.pc.barrier()
     
-##############################################################################
+  ##############################################################################
 
   def writeLog(self,text,flush=True):
     if(self.logFile is not None):
@@ -1819,6 +1851,7 @@ class SnuddaSimulate(object):
     else:
       if(self.verbose):
         print(text)
+
 
 ############################################################################
 
@@ -1987,21 +2020,29 @@ if __name__ == "__main__":
   
   if(voltFile is not None):
     #sim.addRecording(sideLen=None) # Side len let you record from a subset
-    sim.addRecordingOfType("dSPN",5) # Side len let you record from a subset
+    sim.addRecordingOfType('dSPN',nNeurons=4)
+    sim.addRecordingOfType('iSPN',nNeurons=4)
+    sim.addRecordingOfType('FSN',nNeurons=4)
+    sim.addRecordingOfType('ChIN',nNeurons=4)
+    sim.addRecordingOfType('LTS',nNeurons=4)
+    # TODO implement recording of all individual cell types in network (one copy each)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
   #v = [alpha(ht, 300, 100) for ht in np.arange(0,1500,0.025)]
-  vintr = [1 if (ht>1000 and ht<2000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
+  '''
+  vintr = [1 if (ht>1500 and ht<2000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
   v1 = sim.sim.neuron.h.Vector(vintr)
-  vgaba = [1 if (ht>3000 and ht<4000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
+  vgaba = [1 if (ht>2500 and ht<3000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
   v2 = sim.sim.neuron.h.Vector(vgaba)
-  vglut = [1 if (ht>5000 and ht<6000) or (ht>7000 and ht<8000) else 0 for ht in np.arange(0,9000,0.025)]
-  v3 = sim.sim.neuron.h.Vector(vglut)
+  vglut = [1 if (ht>3500 and ht<4000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
+  v3 = sim.sim.neuron.h.Vector(vglut)'''
+  vplay = [1 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.1)]
+  v = sim.sim.neuron.h.Vector(vplay)
   #sim.modTrans.append( vneuron )
-  sim.applyDopamine(transient=v1)
-  sim.setGABAmod(   transient=v2)
-  sim.setGLUTmod(   transient=v3)
+  sim.applyDopamine(transient=v)
+  sim.setGABAmod(   transient=v)
+  sim.setGLUTmod(   transient=v)
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds
@@ -2011,7 +2052,7 @@ if __name__ == "__main__":
     sim.writeSpikes(spikesFile)
     
   if(voltFile is not None):
-    sim.writeVoltage(voltFile)
+    sim.writeVoltage(voltFile, sample=1)
 
 
   stop = timeit.default_timer()

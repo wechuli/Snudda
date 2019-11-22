@@ -122,25 +122,28 @@ class NetworkPlotSpikeRaster(object):
         atop.hist(  pruned_spikes, 
                     bins=100, 
                     range=(0,maxt), 
-                    density=0,
+                    density=1,
                     color=colours[t], 
                     alpha=1.0, 
                     histtype='step')
     
     ax.invert_yaxis()
     
-    ax.set_xlabel('Time (s)')
+    #ax.set_xlabel('Time (s)')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    '''
     if(tickPos is not None):
       ax.set_yticks(tickPos)
       ax.set_yticklabels(tickText)
     else:
-      ax.ylabel('Neurons')
+      ax.ylabel('Neurons')'''
     
     # set axes ---------------------------------------------------
     atop.axis('off')
     # UPDATE here to set specific range for plot window!!!!
-    atop.set_xlim([-0.01,maxt+0.01])
-    ax.set_xlim(  [-0.01,maxt+0.01])
+    atop.set_xlim([-0.01,maxt+0.01-skipTime])
+    ax.set_xlim(  [-0.01,maxt+0.01-skipTime])
     m = len(self.networkInfo.data["neurons"])
     offset = m*0.05 # 5%
     ax.set_ylim([-offset,m+offset])
@@ -159,9 +162,9 @@ class NetworkPlotSpikeRaster(object):
     
     # have updated the name of the saved file to be the same as the fileName
     fn = os.path.basename(self.fileName)
-    figName = '{}/{}{}'.format(figPath, fn.split('.')[0], '-colour.png')
+    figName = '{}/{}{}'.format(figPath, fn.split('.')[0], '-test5-colour.png')
     print("Saving " + figName)
-    plt.savefig(figName,dpi=600)    
+    plt.savefig(figName,dpi=600,transparent=True)    
 
    ############################################################################
 
@@ -208,7 +211,7 @@ class NetworkPlotSpikeRaster(object):
     for i,p in enumerate(plotIdx):
       plotLookup[p] = i
 
-    return plotLookup
+    return plotLookup	
 
 
     
@@ -230,7 +233,7 @@ if __name__ == "__main__":
     networkFile = None
 
   if(fileName is not None):
-    npsr = NetworkPlotSpikeRaster(fileName,networkFile,skipTime=0.0,
+    npsr = NetworkPlotSpikeRaster(fileName,networkFile,skipTime=0.5,
                                   typeOrder=["FSN","dSPN","LTS","iSPN","ChIN"])
 
 
