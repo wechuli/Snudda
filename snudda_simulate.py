@@ -1587,8 +1587,9 @@ class SnuddaSimulate(object):
       try:
         v = self.sim.neuron.h.Vector()
         #import pdb
-        #pdb.set_trace()
-        v.record(getattr(cell.icell.soma[0](0.5),'_ref_v'))
+        #pdb.set_trace() 
+        # TODO updated from getatribute. No reason to use getattribute
+        v.record(cell.icell.soma[0](0.5)._ref_v)
         self.vSave.append(v)
         self.vKey.append(cellKey)
       except Exception as e:
@@ -1670,10 +1671,10 @@ class SnuddaSimulate(object):
 
   def writeSpikes(self,outputFile=None):
 
-    if(outFile is None):
-      outFile = self.getVoltFileName()
+    if(outputFile is None):
+      outputFile = self.getVoltFileName()
 
-    self.writeLog("Writing voltage data to " + outFile)
+    self.writeLog("Writing voltage data to " + outputFile)
       
     for i in range(int(self.pc.nhost())):
       self.pc.barrier() # sync all processes
@@ -2106,13 +2107,12 @@ if __name__ == "__main__":
   #sim.addCurrentFromProtocol()
   
   if(voltFile is not None):
-    sim.addRecording(sideLen=None) # Side len let you record from a subset
-    #sim.addRecordingOfType("dSPN",5) # Side len let you record from a subset
-    #sim.addRecordingOfType("dSPN",2)
-    #sim.addRecordingOfType("iSPN",2)
-    #sim.addRecordingOfType("FSN",2)
-    #sim.addRecordingOfType("LTS",2)
-    #sim.addRecordingOfType("ChIN",2)
+    #sim.addRecording(sideLen=None) # Side len let you record from a subset
+    sim.addRecordingOfType("dSPN",2)
+    sim.addRecordingOfType("iSPN",2)
+    sim.addRecordingOfType("FSN",2)
+    sim.addRecordingOfType("LTS",2)
+    sim.addRecordingOfType("ChIN",2)
     # TODO implement recording of all individual cell types in network (one copy each)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
@@ -2140,11 +2140,11 @@ if __name__ == "__main__":
     sim.writeSpikes(spikesFile)
     
   if(voltFile is not None):
-    sim.writeVoltage(voltFile, sample=1)
+    sim.writeVoltage(voltFile, sample=0)
 
 
   stop = timeit.default_timer()
-  if(self.pc.id() == 0):
+  if(sim.pc.id() == 0):
     print("Program run time: " + str(stop - start ))
 
   # sim.plot()

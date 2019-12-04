@@ -4,17 +4,18 @@ import json
 import os
 
 if __name__ == "__main__":
-  
+  '''
   import argparse
   parser = argparse.ArgumentParser(description="Init custom network")
   parser.add_argument("network",type=str,help="Network path")
-  args = parser.parse_args()
+  args = parser.parse_args()'''
 
   
   
-  simName = args.network
+  #simName = args.network
   #simName = "networks/SynTest-v6" # MSMS tuning
-  #simName = "networks/SynTest-v15"  
+  #simName = "networks/SynTest-v15"
+  simName = "custom5each" 
   
   # connect network? > True/False
   connectNeurons = 1 #False

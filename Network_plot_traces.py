@@ -128,13 +128,7 @@ class NetworkPlotTraces():
           import pdb
           pdb.set_trace()
           
-      plt.plot(self.time,
-               self.voltage[r,:] + ofs,
-               color=colour,
-               lw=3)
-      ofs += offset
-      
-      '''
+      print( r)
       plt.plot(self.time[timeIdx]-skipTime,
                self.voltage[r][timeIdx] + ofs,
                color=colour)
@@ -142,7 +136,7 @@ class NetworkPlotTraces():
 
     if(plotCount == 0):
       plt.close()
-      return'''
+      return
     
     if compare:
         path2control = '../Alex_model_repo/models/optim/Dopamine/Analysis/Results/'
