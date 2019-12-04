@@ -355,10 +355,10 @@ class SnuddaLoad(object):
 
     print("Finding synapses originating from " + str(preID) + ", this is slow")
     
-    synapses = np.zeros((nMax,12))
+    synapses = np.zeros((nMax,13),dtype=np.int32)
     synCtr = 0
-
-    if(type(preID) == int):
+    
+    if(np.issubdtype(type(preID),np.integer)):
       for synList in self.synapseIterator():
         for syn in synList:
           if(syn[0] == preID):
@@ -384,7 +384,7 @@ class SnuddaLoad(object):
   
   # Either give preID and postID, or just postID
   
-  def findSynapses(self,preID=None,postID=None):
+  def findSynapses(self,preID=None,postID=None,silent=True):
 
     if(postID is None):
       return self.findSynapsesSLOW(preID=preID)
@@ -463,9 +463,10 @@ class SnuddaLoad(object):
           valB2 = rowEval(f["network/synapses"][idxB2+1,:],nNeurons)
 
       synapses = f["network/synapses"][idxB1:idxB2+1,:].copy()
-      
-      print("Synapse range, first " + str(idxB1) + ", last " + str(idxB2))
-      print(str(synapses))
+
+      if(not silent):
+        print("Synapse range, first " + str(idxB1) + ", last " + str(idxB2))
+        print(str(synapses))
 
       # Calculate coordinates
       synapseCoords = synapses[:,2:5] \
@@ -517,17 +518,25 @@ class SnuddaLoad(object):
 
   # Returns cellID of all neurons of neuronType
   
-  def getCellIDofType(self,neuronType,nNeurons=None):
-
+  def getCellIDofType(self,neuronType,nNeurons=None,randomPermute=False):
+    '''
+    plz run with rundomPermute=False if called from addRecordingOfType (in snudda_simulate.py).
+        If not, each worker will send different ID's to be recorded.
+        The sent ID's may or may not be handled by the worker.
+        If they are they will be recorded if not they will not.
+        
+        -> I.e. you will not get the specified number of cells (unless by chance).
+    '''
     
     cellID = [x["neuronID"] for x in self.data["neurons"] \
               if x["type"] == neuronType]
 
-    
     if(nNeurons is not None):
-      #keepIdx = np.random.permutation(len(cellID))[:nNeurons]
-      #cellID = np.array([cellID[x] for x in keepIdx])
-      cellID = np.array([cellID[x] for x in range(nNeurons)])
+      if(randomPermute):
+        keepIdx = np.random.permutation(len(cellID))[:nNeurons]
+        cellID = np.array([cellID[x] for x in keepIdx])
+      else:
+        cellID = np.array([cellID[x] for x in range(nNeurons)])
 
       if(len(cellID) < nNeurons):
         print("getCellIDofType: wanted " + str(nNeurons) \
@@ -544,19 +553,76 @@ class SnuddaLoad(object):
   
   
 if __name__ == "__main__":
-  if(len(sys.argv) > 1):
-    nl = SnuddaLoad(sys.argv[1]) 
-  else:
-    print("No argument given, using a test file")
-    nl = SnuddaLoad("save/network-connect-voxel-pruned-synapse-file-413.hdf5")
 
+  from argparse import ArgumentParser
+  parser = ArgumentParser(description="Load snudda network file (hdf5)")
+  parser.add_argument("networkFile", help="Network file (hdf5)",type=str)
+  parser.add_argument("--listN", help="Lists neurons in network",
+                      action="store_true")
+  parser.add_argument("--listT", type=str,
+                      help="List neurons of type, --listT ? list the types.",
+                      default=None)
+  parser.add_argument("--listPre", help="List pre synaptic neurons",
+                      type=int)
+  parser.add_argument("--listPost", help="List post synaptic neurons (slow)",
+                      type=int)
+  args = parser.parse_args()
+
+  nl = SnuddaLoad(args.networkFile) 
+
+  if(args.listN):
+    print("Neurons in network: ")
+
+    for nid,name,pos in [(x["neuronID"],x["name"],x["position"])\
+                         for x in nl.data["neurons"]]:
+      print("%d : %s  (x: %f, y: %f, z: %f)" % (nid,name,pos[0],pos[1],pos[2]))
+    
+  if(args.listT is not None):
+    if(args.listT == "?"):
+      print("List neuron types in network:")
+
+      nTypes = np.unique([x["type"] for x in nl.data["neurons"]])
+      for nt in nTypes:
+        num = len([x["type"] for x in nl.data["neurons"] if x["type"] == nt])
+        print(nt + " (" + str(num) + " total)")
+      
+    else:
+      print("Neurons of type " + args.listT + ":")
+      nOfType = [(x["neuronID"], x["name"]) for x in nl.data["neurons"] \
+                 if x["type"] == args.listT]
+      for nid,name in nOfType:
+        print("%d : %s" % (nid,name))
+
+  if(args.listPre):
+    print("List neurons pre-synaptic to neuronID = " + str(args.listPre) \
+          + " (" + str(nl.data["neurons"][args.listPre]["name"]) + ")" )
+    synapses = nl.findSynapses(postID=args.listPre)
+    preID = np.unique(synapses[0][:,0])
+    
+    for nid,name in [(x["neuronID"], x["name"]) for x in nl.data["neurons"] \
+                     if x["neuronID"] in preID]:
+      nSyn = np.sum(synapses[0][:,0] == nid)
+      print("%d : %s (%d synapses)" % (nid,name,nSyn))
+
+  if(args.listPost):
+    print("List neurons post-synaptic to neuronID = " + str(args.listPost) \
+          + " (" + str(nl.data["neurons"][args.listPost]["name"]) + ")" )
+    synapses = nl.findSynapses(preID=args.listPost)
+    postID = np.unique(synapses[0][:,1])
+    
+    for nid,name in [(x["neuronID"], x["name"]) for x in nl.data["neurons"] \
+                     if x["neuronID"] in postID]:
+      nSyn = np.sum(synapses[0][:,1] == nid)
+      print("%d : %s (%d synapses)" % (nid,name,nSyn))
+    
+    # List neurons of network
+  
+  
   #syn = nl.findSynapses(22,5)
 
   #syn2 = nl.findSynapses(postID=5) 
 
 
   
-  cellID = nl.getCellIDofType(neuronType="FSN")
+  # cellID = nl.getCellIDofType(neuronType="FSN")
   
-  import pdb
-  pdb.set_trace()

@@ -105,7 +105,7 @@ class NeuronModel(ephys.models.CellModel):
     # Save this to be accessible in the future
     self.parameters = allparamdefs
     for param_config in allparamdefs:
-      # Adding vinit here! 
+      # Adding vinit here! TODO remove if method removed from snudda_simulate! (set_vinit; ~l. 1600)
       if param_config['param_name'] == "v_init": self.vinit=param_config['value']
       if 'value' in param_config:
         frozen = True

@@ -21,8 +21,10 @@
 
 from mpi4py import MPI # This must be imported before neuron, to run parallel
 from neuron import h, gui
+import neuron
 import h5py
 import json
+import timeit
 
 import bluepyopt.ephys as ephys
 from Neuron_model_extended import NeuronModel
@@ -54,15 +56,9 @@ class SnuddaSimulate(object):
     self.verbose = verbose
     self.logFile = logFile
     
-    # neuromodulation specific attributes ------------------------------------
-    
-    # list for holding current injections
-    self.istim = []
-    
-    # holder for modulation transients
+    # holder for modulation transients --------------------------------------------------
+    # TODO not in use. Remove?
     self.modTrans = []
-    
-    # ------------------------------------------------------------------------
     
     # TODO: why are these statements duplicated in the if statement below???
     self.networkFile = networkFile
@@ -86,7 +82,9 @@ class SnuddaSimulate(object):
         
     self.writeLog("Using networkFile: " + str(networkFile))
     self.writeLog("Using inputFile: " + str(inputFile))
-    self.writeLog("Using logFile: " + str(self.logFile.name))
+    
+    if(self.logFile is not None):
+      self.writeLog("Using logFile: " + str(self.logFile.name))
                   
       
     
@@ -111,11 +109,15 @@ class SnuddaSimulate(object):
     self.netConList = [] # Avoid premature garbage collection
     self.synapseList = []
     self.synapseDict = {} # added to map synapse to cell
+    self.iStim = []
+    self.vClampList = []
     self.gapJunctionList = []
     self.externalStim = dict([])
     self.tSave = []
     self.vSave = []
     self.vKey = []
+    self.iSave = []
+    self.iKey = []
 
     self.inputData = None
     
@@ -267,6 +269,7 @@ class SnuddaSimulate(object):
       if("modFile" in infoDict):
         modFile = infoDict["modFile"]
         try:
+          # Can we avoid the eval here?
           evalStr = "self.sim.neuron.h." + modFile
           channelModule = eval(evalStr)
         except:
@@ -397,7 +400,7 @@ class SnuddaSimulate(object):
     
     # Add gap junctions
     if(self.disableGapJunctions):
-      self.writeLog("Gap junctions disabled.")
+      self.writeLog("!!! Gap junctions disabled.")
     else:
       self.writeLog("Adding gap junctions.")
       #self.connectNetworkGapJunctions()
@@ -730,87 +733,6 @@ class SnuddaSimulate(object):
         pdb.set_trace()
         
     
-  ############################################################################
-  
-  # This connects one neuron, need to loop over all on the node
-
-  # !!! DEPRICATED
-  def connectNeuron(self,cellID):
-
-    print("Use connectNeuronSynapses instead")
-    
-    assert False, "depricated"
-    #!!! this should not iterate over rows multiple times, instead should
-    #!!! keep track of where it is
-    
-    assert not self.isVirtualNeuron[cellID], \
-      "You should not call connectNeuron with a virtual neuron: " \
-      + self.neurons[cellID]["name"]
-    
-    
-    # This goes through all the synapses on the neuron, and finds all
-    # presynaptic neurons
-
-    # All rows in synapse list that target cellID
-    # sourceID, sourceComp, destID, destComp
-    # We ignore sourceComp since we use axon setup and place it on that instead
-    # Exclude gap junctions in this first pass synapseType != 3
-    idx = np.logical_and(self.network_info["synapses"][:,1] == cellID,
-                         self.network_info["synapses"][:,6] != 3)
-
-    synapseInfo = self.network_info["synapses"][idx,:]
-
-    # Find coordinates of the synapses in the original coordinate frame
-    # by using dendOrig (old) instead of dend (which has the actual locations)
-
-    # synapseInputLoc = self.network_info["origSynapseCoords"][idx,:]
-    
-
-    sourceCellID = synapseInfo[:,0]
-    # locType = synapseInfo[:,4]
-    synapseType = synapseInfo[:,6]
-    axonDistance = synapseInfo[:,7]
-
-    secID = synapseInfo[:,9]
-    secX = synapseInfo[:,10]/1000.0 # Convert to number 0-1
-
-    # This is just a double check, to make sure what I do matches
-    # the ball and stick example (trying to figure out why code
-    # works in serial but not parallel)
-    assert self.pc.gid2cell(cellID) == self.neurons[cellID].icell, \
-      "GID mismatch: " + str(self.pc.gid2cell(cellID)) \
-      + " != " + str(self.neurons[cellID].icell)
-
-    # Get the sections
-    dendSection = self.neurons[cellID].mapIDtoCompartment(secID)
-
-
-    
-    for (srcID,section,sectionX,sType,axonDist) \
-        in zip(sourceCellID,dendSection,secX,synapseType,axonDistance):
-
-      if(sType == 3):
-        # We deal with gap junctions further down
-        continue
-
-
-      try:
-
-        #self.writeLog("Node: " + str(int(self.pc.id())) \
-        #              + " srcID = " + str(srcID) + " loc = " + str(loc))
-
-        #self.writeLog("Source status: " + str(int(self.pc.gid_exists(srcID))) \
-        #              + " dest status: " + str(int(self.pc.gid_exists(cellID))))
-          
-        self.addSynapse(cellIDsource=srcID,
-                        dendCompartment=section,
-                        sectionDist=sectionX,
-                        synapseType=self.synapseTypeLookup[sType],
-                        axonDist=axonDist)
-      except Exception as e:
-        self.writeLog("problem in addSynapse: " + str(e))
-        import pdb
-        pdb.set_trace()
 
 ############################################################################
 
@@ -897,15 +819,17 @@ class SnuddaSimulate(object):
 
       parSet = parData[parID]
       for par in parSet:
-        if(par == "expdata"):
-          # Not a parameter
+        if(par == "expdata" or par == "cond"):
+          # expdata is not a parameter, and cond we take from synapse matrix
           continue
         
         try:
-          evalStr = "syn." + par + "=" + str(parSet[par])
+          setattr(syn,par,parSet[par])
+
+          #evalStr = "syn." + par + "=" + str(parSet[par])
           # self.writeLog("Updating synapse: " + evalStr)
           # !!! Can we avoid an eval here, it is soooo SLOW
-          exec(evalStr)
+          #exec(evalStr)
         except:
           import traceback
           tstr = traceback.format_exc()
@@ -1404,7 +1328,14 @@ class SnuddaSimulate(object):
           # Get the modifications of synapse parameters, specific to
           # this synapse
           if(paramList is not None and len(paramList) > 0):
-            synParams = paramList[paramID % len(paramList)]["synapse"]
+            try:
+              synParams = paramList[paramID % len(paramList)]["synapse"]
+            except:
+              import traceback
+              tstr = traceback.format_exc()
+              print(tstr)
+              import pdb
+              pdb.set_trace()
 
             for par in synParams:
               if(par == "expdata"):
@@ -1580,9 +1511,52 @@ class SnuddaSimulate(object):
 
     cellID = self.snuddaLoader.getCellIDofType(neuronType=neuronType,
                                                nNeurons=nNeurons)
-
-    self.addRecording(cellID) 
     
+    self.addRecording(cellID)
+  
+  ############################################################################
+
+  def addVoltageClamp(self,cellID,voltage,duration,res=1e-9,saveIflag=False):
+
+    if(type(cellID) != list):
+      cellID = [cellID]
+
+    if(type(voltage) != list):
+      voltage = [voltage for x in cellID]
+
+    if(type(duration) != list):
+      duration = [duration for x in cellID]
+      
+    if(type(res) != list):
+      res = [res for x in cellID]
+
+    if(saveIflag and (len(self.tSave) == 0 or self.tSave is None)):
+      self.tSave = self.sim.neuron.h.Vector()
+      self.tSave.record(self.sim.neuron.h._ref_t)
+
+    for cID,v,rs,dur in zip(cellID,voltage,res,duration):
+      
+      if(not(cID in self.neuronID)):
+        # Not in the list of neuronID on the worker, skip it
+        continue
+      
+      self.writeLog("Adding voltage clamp to " + str(cID))
+      s = self.neurons[cID].icell.soma[0]
+      vc = neuron.h.SEClamp(s(0.5))
+      vc.rs = rs
+      vc.amp1 = v*1e3
+      vc.dur1 = dur*1e3
+
+      self.writeLog("Resistance: " + str(rs) \
+                    + ", voltage: " + str(vc.amp1) + "mV")
+      
+      self.vClampList.append(vc)
+
+      if(saveIflag):
+        cur = self.sim.neuron.h.Vector()
+        cur.record(vc._ref_i)
+        self.iSave.append(cur)
+        self.iKey.append(cID)
     
   ############################################################################
   
@@ -1598,8 +1572,11 @@ class SnuddaSimulate(object):
     # the centre)
     cellID = self.centreNeurons(sideLen=sideLen,neuronID=cellID)
 
+    # Only include neuron IDs on this worker, ie those in self.neuronID
+    # (filtering in the if statement)
     cells = dict((k,self.neurons[k]) \
-                 for k in cellID if k in self.neurons and not self.isVirtualNeuron[k])
+            for k in cellID if (not self.isVirtualNeuron[k] \
+                                     and k in self.neuronID))
 
     if(len(self.tSave) == 0 or self.tSave is None):
       self.tSave = self.sim.neuron.h.Vector()
@@ -1620,7 +1597,9 @@ class SnuddaSimulate(object):
         pdb.set_trace()
         
   ############################################################################
-  
+    
+  # depricated. TODO remove? 
+  # TODO if so also remove cell.vinit from class
   def set_vinit(self, cellID=None):
     '''set vinit for each cell individually'''
     
@@ -1634,14 +1613,23 @@ class SnuddaSimulate(object):
         for sec in compartment:
           for seg in sec:
             seg.v = cell.vinit
-        
-  def run(self,t=1000.0):
-    #self.sim.neuron.h.v_init = -78
-    #self.sim.neuron.h.finitialize(-78)
-    # ----
-    #self.set_vinit()
-    #self.sim.neuron.h.finitialize()
-    # TODO remove? check solution
+
+  
+  def run(self,t=1000.0,holdV=None):
+
+    self.setupPrintSimTime(t)
+    
+    startTime = timeit.default_timer()
+    
+    # If we want to use a non-default initialisation voltage, we need to 
+    # explicitly set: h.v_init
+    if(holdV is None):
+      self.sim.neuron.h.finitialize()
+    else:
+      self.writeLog("User override for holding voltage: " \
+                    + str(holdV*1e3) + " mV")
+      self.sim.neuron.h.finitialize(holdV*1e3)
+      
     # Asked on neuron, check answer:
     # https://www.neuron.yale.edu/phpBB/viewtopic.php?f=2&t=4161&p=18021
     
@@ -1654,6 +1642,9 @@ class SnuddaSimulate(object):
     self.pc.barrier()
     self.writeLog("Simulation done.")
     
+    endTime = timeit.default_timer()
+    self.writeLog("Simulation run time: " \
+                  + str(endTime - startTime) + " s")
     
   ############################################################################
     
@@ -1677,7 +1668,13 @@ class SnuddaSimulate(object):
 
   ############################################################################
 
-  def writeSpikes(self,outputFile='save/network-spikes.txt'):
+  def writeSpikes(self,outputFile=None):
+
+    if(outFile is None):
+      outFile = self.getVoltFileName()
+
+    self.writeLog("Writing voltage data to " + outFile)
+      
     for i in range(int(self.pc.nhost())):
       self.pc.barrier() # sync all processes
       if(i == int(self.pc.id())):
@@ -1839,6 +1836,39 @@ class SnuddaSimulate(object):
               voltageFile.write(',%.4f' % voltage[vIdx])
          
       self.pc.barrier()
+
+  ############################################################################  
+
+  # File format for csv current file:
+  # -1,t0,t1,t2,t3 ... (time)
+  # cellID,i0,i1,i2,i3, ... (current for cell #ID)
+  # repeat
+  
+  def writeCurrent(self,outputFile="save/traces/network-current",
+                   downSampling=20):
+    for i in range(int(self.pc.nhost())):
+      self.pc.barrier()
+      
+      if(i == int(self.pc.id())):
+        if(i == 0):
+          mode = 'w'
+        else:
+          mode = 'a'
+          
+        with open(outputFile,mode) as currentFile:
+          if(mode == 'w'):
+            currentFile.write('-1') # Indiciate that first column is time
+
+            for tIdx in range(0,len(self.tSave),downSampling):
+              currentFile.write(',%.4f' % self.tSave[tIdx])
+            
+          for iID, cur in zip(self.iKey,self.iSave):
+            currentFile.write('\n%d' % iID)
+
+            for iIdx in range(0,len(cur),downSampling):
+              currentFile.write(',%.4f' % cur[iIdx])
+         
+      self.pc.barrier()
     
   ##############################################################################
 
@@ -1862,6 +1892,63 @@ class SnuddaSimulate(object):
 
         
 ############################################################################
+
+  def addCurrentInjection(self,neuronID,startTime,endTime,amplitude):
+
+    if neuronID not in self.neuronID:
+      # The neuron ID does not exist on this worker
+      return
+    
+    assert endTime > startTime, \
+      "addCurrentInection: End time must be after start time"
+    
+    curStim = self.sim.neuron.h.IClamp(0.5,
+                                       sec=self.neurons[neuronID].icell.soma[0])
+    curStim.delay = startTime*1e3
+    curStim.dur = (endTime-startTime)*1e3
+    curStim.amp = amplitude*1e9 # What is units of amp?? nA??
+
+    self.iStim.append(curStim)
+
+  ############################################################################
+
+  def getVoltFileName(self):
+
+    voltFile = os.path.basename(self.networkFile) + "/simulation-volt.txt"
+
+    return voltFile
+
+  ############################################################################
+
+  # Use event handling
+  
+  def setupPrintSimTime(self,tMax):
+
+    # Only have the first node print time estimates
+    if(self.pc.id() == 0):
+      self.tMax = tMax
+      self.simStartTime = timeit.default_timer()
+      self.fihTime = h.FInitializeHandler((self._setupPrintSimTimeHelper,tMax))
+
+  ############################################################################
+    
+  def _setupPrintSimTimeHelper(self,tMax):
+    updatePoints = np.arange(tMax/100., tMax, tMax/100. )
+    for t in updatePoints:
+      h.cvode.event(t, self.printSimTime)
+
+  ############################################################################
+      
+  def printSimTime(self):
+    curTime = timeit.default_timer()
+    elapsedTime = curTime - self.simStartTime
+    fractionDone = h.t/self.tMax
+    timeLeft = elapsedTime * ((self.tMax - h.t)/ h.t)
+
+    self.writeLog("%f done. Elapsed: %f s, estimated time left: %f" \
+                  % (fractionDone, elapsedTime, timeLeft))
+  
+  ############################################################################
 
 def findLatestFile(fileMask):
 
@@ -2019,12 +2106,13 @@ if __name__ == "__main__":
   #sim.addCurrentFromProtocol()
   
   if(voltFile is not None):
-    #sim.addRecording(sideLen=None) # Side len let you record from a subset
-    sim.addRecordingOfType('dSPN',nNeurons=4)
-    sim.addRecordingOfType('iSPN',nNeurons=4)
-    sim.addRecordingOfType('FSN',nNeurons=4)
-    sim.addRecordingOfType('ChIN',nNeurons=4)
-    sim.addRecordingOfType('LTS',nNeurons=4)
+    sim.addRecording(sideLen=None) # Side len let you record from a subset
+    #sim.addRecordingOfType("dSPN",5) # Side len let you record from a subset
+    #sim.addRecordingOfType("dSPN",2)
+    #sim.addRecordingOfType("iSPN",2)
+    #sim.addRecordingOfType("FSN",2)
+    #sim.addRecordingOfType("LTS",2)
+    #sim.addRecordingOfType("ChIN",2)
     # TODO implement recording of all individual cell types in network (one copy each)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
@@ -2056,7 +2144,8 @@ if __name__ == "__main__":
 
 
   stop = timeit.default_timer()
-  print("Program run time: " + str(stop - start ))
+  if(self.pc.id() == 0):
+    print("Program run time: " + str(stop - start ))
 
   # sim.plot()
   exit(0)

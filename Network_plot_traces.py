@@ -18,7 +18,7 @@ class NetworkPlotTraces():
     self.networkFile = networkFile
 
     self.time = []
-    self.voltage = []
+    self.voltage = dict([])
 
     self.readCSV()
 
@@ -46,11 +46,11 @@ class NetworkPlotTraces():
 
     self.time = data[0,1:] / 1e3
 
-    self.voltage = np.zeros((data.shape[0]-1,data.shape[1]-1))
+    self.voltage = dict()
     
     for rows in data[1:,:]:
       cID = int(rows[0])
-      self.voltage[cID,:] = rows[1:] * 1e-3
+      self.voltage[cID] = rows[1:] * 1e-3
             
   ############################################################################
 
@@ -66,23 +66,10 @@ class NetworkPlotTraces():
                  "FSN" : (6./255,31./255,85./255),
                  "ChIN" : [252./255,102./255,0],
                  "LTS" : [150./255,63./255,212./255]}
-    try:
-    
-      if(traceID is None):
-        traceID = self.rowFromCellID.keys()
-      
-    except:
-        import traceback
-        tstr = traceback.format_exc()
-        print(tstr)
-        import pdb
-        pdb.set_trace()
-      
-      
     
     print("Plotting traces: " + str(traceID))
     print("Plotted " + str(len(traceID)) + " traces (total " \
-      + str(self.voltage.shape[0]) + ")")
+      + str(len(self.voltage)) + ")")
       
     import matplotlib.pyplot as plt
 
@@ -116,9 +103,17 @@ class NetworkPlotTraces():
     else:
       skipTime = 0.0
       timeIdx = range(0,len(self.time))
-      
+
+    plotCount = 0
+    
     for r in traceID:
 
+      if(r not in self.voltage):
+        print("Missing data for trace " + str(r))
+        continue
+
+
+      plotCount += 1
       typesInPlot.add(self.networkInfo.data["neurons"][r]["type"])
       
       if(colours is None or self.networkInfo is None):
@@ -138,6 +133,16 @@ class NetworkPlotTraces():
                color=colour,
                lw=3)
       ofs += offset
+      
+      '''
+      plt.plot(self.time[timeIdx]-skipTime,
+               self.voltage[r][timeIdx] + ofs,
+               color=colour)
+      ofs += offset
+
+    if(plotCount == 0):
+      plt.close()
+      return'''
     
     if compare:
         path2control = '../Alex_model_repo/models/optim/Dopamine/Analysis/Results/'
@@ -159,6 +164,7 @@ class NetworkPlotTraces():
             if cid >= len(ctrl[0]['data']):continue
             data = list(ctrl[0]['data'][cid]['control'].values())[0]
             plt.plot(np.array(data['t'])*1e-3,np.array(data['v'])*1e-3, '--k')
+    
     plt.xlabel('Time')
     plt.ylabel('Voltage')
 

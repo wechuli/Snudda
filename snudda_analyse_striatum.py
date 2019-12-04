@@ -73,9 +73,15 @@ class SnuddaAnalyseStriatum(SnuddaAnalyse):
 
         if(not plotMeFlag):
           continue
+
+        try:
+          pairID = tuple([self.allTypes.index(x) for x in pair])
+        except:
+          import traceback
+          tstr = traceback.format_exc()
+          print(tstr)
+          continue
         
-        pairID = tuple([self.allTypes.index(x) for x in pair])
-                
         cumDist = np.cumsum(self.dendPositionBin[pairID])  \
                     /np.sum(self.dendPositionBin[pairID])
 
@@ -153,50 +159,6 @@ if __name__ == "__main__":
   #import pdb
   #pdb.set_trace()
 
-  nas.plotFSLTScumDist()
-  nas.plotFSLTScumDist(plotFS=False)
-  nas.plotFSLTScumDist(plotLTS=False)
-
-  
-  nas.plotNumSynapsesPerPair("dSPN","ChIN")
-  nas.plotNumSynapsesPerPair("iSPN","ChIN")
-  nas.plotNumSynapsesPerPair("LTS","ChIN")
-  
-  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
-  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
-  
-  nas.plotNumSynapsesPerPair("FSN","FSN")  
-  nas.plotNumSynapsesPerPair("ChIN","FSN")  
-
-  nas.plotNumSynapsesPerPair("ChIN","LTS")
-
-  
-  nas.plotNumSynapsesPerPair("ChIN","dSPN")
-  nas.plotNumSynapsesPerPair("ChIN","iSPN")      
-
-  nas.plotNumSynapsesPerPair("LTS","dSPN")
-  nas.plotNumSynapsesPerPair("LTS","iSPN")  
-
-  
-  nas.plotSynapseCumDist()
-
-  nas.plotSynapseDist(densityFlag=True)
-  
-  if(True):
-    nas.plotConnectionProbability("LTS","ChIN", \
-                                  dist3D=dist3D )
-
-    # ALSO ADD GAP JUNCTIONS PLOT!!!
-    # No exp data for this -- Gittis,...,Kreitzer 2010 (p2228) -- 7/12 (and 3/4 reciprocal) -- distance?
-    # FS->FS synapses weaker, 1.1 +/- 1.5nS
-    
-    nas.plotConnectionProbability("FSN","FSN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[250e-6],\
-                                  expData=[7/12.0],
-                                  expDataDetailed=[(7,12)] )
-
-
     
   # This plots figures for the article
 
@@ -204,6 +166,76 @@ if __name__ == "__main__":
   # 150e-6 from Gittis 2011 (actually 100 +/- 50 micrometers)
   
   # MS <-> MS
+
+    # FS -> MS
+
+  nas.plotNumSynapsesPerPair("ChIN","dSPN")
+  nas.plotNumSynapsesPerPair("ChIN","iSPN")      
+  nas.plotNumSynapsesPerPair("ChIN","LTS")
+
+  nas.plotConnectionProbability("ChIN","LTS", \
+                                dist3D=dist3D)
+  
+  # Janicova 2015?? --- distance??!
+  nas.plotConnectionProbability("ChIN","iSPN", \
+                                dist3D=dist3D,
+                                expMaxDist=[250e-6],
+                                expData=[0.05])
+    
+  nas.plotConnectionProbability("ChIN","dSPN", \
+                                dist3D=dist3D,
+                                expMaxDist=[250e-6],
+                                expData=[0.05])
+  
+  
+    
+  if(True):
+    # 2-5 ChIN should connect to each MS (approx)
+    nas.plotIncomingConnections(neuronType="dSPN",preType="ChIN")
+    nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")  
+    
+  
+
+  if(True):
+
+    nas.plotConnectionProbability("FSN","iSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[100e-6, 150e-6, 250e-6],
+                                  expData=[6/9.0, 21/54.0, 27/77.0],
+                                  expDataDetailed=[(6,9),(21,54),(27,77)],
+                                  yMax=None)
+
+    nas.plotConnectionProbability("FSN","dSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[100e-6, 150e-6, 250e-6],
+                                  expData=[8/9.0, 29/48.0, 48/90.0],
+                                  expDataDetailed=[(8,9),(29,48),(48,90)],
+                                  yMax=None)
+
+    nas.plotNumSynapsesPerPair("FSN","dSPN")
+    nas.plotNumSynapsesPerPair("FSN","iSPN")  
+
+    nas.plotConnectionProbability("FSN","FSN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[250e-6],\
+                                  expData=[7/12.0],
+                                  expDataDetailed=[(7,12)] )
+
+    nas.plotNumSynapsesPerPair("FSN","FSN")  
+    
+
+    nas.plotConnectionProbability("FSN","FSN", \
+                                  dist3D=dist3D ,
+                                  connectionType="gapjunctions",
+                                  expMaxDist=[250e-6,250e-6],
+                                  expData=[2/6.0,3/7.0],
+                                  expDataDetailed=[(2,6),(3,7)],)
+
+    nas.plotNumSynapsesPerPair("FSN","FSN",connectionType="gapjunctions")
+   
+    nas.plotIncomingConnections(neuronType="FSN",preType="FSN",
+                                connectionType="gapjunctions")
+
 
   if(plotHenrike):
 
@@ -234,21 +266,49 @@ if __name__ == "__main__":
                                   expDataDetailed=[(14,39),(7,31)],
                                   yMax=yMaxH)
       
-    # FS -> MS
-  
-    nas.plotConnectionProbability("FSN","iSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[100e-6, 150e-6, 250e-6],
-                                  expData=[6/9.0, 21/54.0, 27/77.0],
-                                  expDataDetailed=[(6,9),(21,54),(27,77)],
-                                  yMax=None)
 
-    nas.plotConnectionProbability("FSN","dSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[100e-6, 150e-6, 250e-6],
-                                  expData=[8/9.0, 29/48.0, 48/90.0],
-                                  expDataDetailed=[(8,9),(29,48),(48,90)],
-                                  yMax=None)
+
+
+  nas.plotNumSynapsesPerPair("dSPN","dSPN")
+  nas.plotNumSynapsesPerPair("dSPN","iSPN")    
+  nas.plotNumSynapsesPerPair("iSPN","dSPN")
+  nas.plotNumSynapsesPerPair("iSPN","iSPN")    
+
+  
+  
+  nas.plotFSLTScumDist()
+  nas.plotFSLTScumDist(plotFS=False)
+  nas.plotFSLTScumDist(plotLTS=False)
+
+  
+  nas.plotNumSynapsesPerPair("dSPN","ChIN")
+  nas.plotNumSynapsesPerPair("iSPN","ChIN")
+  nas.plotNumSynapsesPerPair("LTS","ChIN")
+  
+  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
+  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
+  
+  nas.plotNumSynapsesPerPair("ChIN","FSN")  
+
+
+  
+
+  nas.plotNumSynapsesPerPair("LTS","dSPN")
+  nas.plotNumSynapsesPerPair("LTS","iSPN")  
+
+  
+  nas.plotSynapseCumDist()
+
+  nas.plotSynapseDist(densityFlag=True)
+  
+  if(True):
+    nas.plotConnectionProbability("LTS","ChIN", \
+                                  dist3D=dist3D )
+
+    # ALSO ADD GAP JUNCTIONS PLOT!!!
+    # No exp data for this -- Gittis,...,Kreitzer 2010 (p2228) -- 7/12 (and 3/4 reciprocal) -- distance?
+    # FS->FS synapses weaker, 1.1 +/- 1.5nS
+    
 
 
   if(plotChIN):
@@ -287,7 +347,19 @@ if __name__ == "__main__":
                                   dist3D=dist3D,
                                   yMax=None)
 
-    # 2-5 ChIN should connect to each MS (approx) --- ref?
+    # A MS neuron receives 1e4 assymetrical synapses (Kincaid et al 1998),
+    # and 2500 symmetrical synapses (Ingham et al 1998). Symmetrical synapses
+    # can be dopaminergic, cholinergic or GABAergic, with dopaminergic
+    # being 13% (Roberts et al 2002). Assuming that cholinergic inputs are
+    # a similar percentage, 650 symmetrical synapses per MS are not GABAergic.
+    #
+    # --> 0.13*2500 = 325 ChIN inputs to MS
+    nas.plotIncomingConnections(neuronType="ChIN",preType="dSPN")
+    nas.plotIncomingConnections(neuronType="ChIN",preType="iSPN")  
+    nas.plotIncomingConnections(neuronType="ChIN",preType="LTS")
+
+    
+    # 2-5 ChIN should connect to each MS (approx) --- ref? ?!?!?!
     nas.plotIncomingConnections(neuronType="dSPN",preType="ChIN")            
     nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")            
 
@@ -299,28 +371,6 @@ if __name__ == "__main__":
     nas.plotConnectionProbability("iSPN","ChIN", \
                                   dist3D=dist3D)
 
-    # A MS neuron receives 1e4 assymetrical synapses (Kincaid et al 1998),
-    # and 2500 symmetrical synapses (Ingham et al 1998). Symmetrical synapses
-    # can be dopaminergic, cholinergic or GABAergic, with dopaminergic
-    # being 13% (Roberts et al 2002). Assuming that cholinergic inputs are
-    # a similar percentage, 650 symmetrical synapses per MS are not GABAergic.
-    #
-    # --> 0.13*2500 = 325 ChIN inputs to MS
-    nas.plotIncomingConnections(neuronType="ChIN",preType="dSPN")
-    nas.plotIncomingConnections(neuronType="ChIN",preType="iSPN")  
-
-  if(True):
-    nas.plotConnectionProbability("FSN","FSN", \
-                                  dist3D=dist3D ,
-                                  connectionType="gapjunctions",
-                                  expMaxDist=[250e-6,250e-6],
-                                  expData=[2/6.0,3/7.0],
-                                  expDataDetailed=[(2,6),(3,7)],)
-
-    nas.plotNumSynapsesPerPair("FSN","FSN",connectionType="gapjunctions")
-   
-    nas.plotIncomingConnections(neuronType="FSN",preType="FSN",
-                                connectionType="gapjunctions")
 
 
     
@@ -346,25 +396,15 @@ if __name__ == "__main__":
 
   
     # Silberberg et al 2013, 2/12 FS-> LTS connected --- distance??
+    # Voltage deflection... 0.5mV and 0.8mV
+    # (check Szydlowski et al 2013, what Cl rev)
+    #
     nas.plotConnectionProbability("FSN","LTS", \
                                   dist3D=dist3D,
                                   expMaxDist=[250e-6],
                                   expData=[2.0/12],
                                   expDataDetailed=[(2,12)])
     
-    nas.plotConnectionProbability("ChIN","LTS", \
-                                  dist3D=dist3D)
-
-    # Janicova 2015?? --- distance??!
-    nas.plotConnectionProbability("ChIN","iSPN", \
-                                  dist3D=dist3D,
-                                  expMaxDist=[250e-6],
-                                  expData=[0.05])
-    
-    nas.plotConnectionProbability("ChIN","dSPN", \
-                                  dist3D=dist3D,
-                                  expMaxDist=[250e-6],
-                                  expData=[0.05])
 
 
     
@@ -373,12 +413,6 @@ if __name__ == "__main__":
 
     
   if(True):
-    nas.plotNumSynapsesPerPair("FSN","dSPN")
-    nas.plotNumSynapsesPerPair("FSN","iSPN")  
-    nas.plotNumSynapsesPerPair("dSPN","dSPN")
-    nas.plotNumSynapsesPerPair("dSPN","iSPN")    
-    nas.plotNumSynapsesPerPair("iSPN","dSPN")
-    nas.plotNumSynapsesPerPair("iSPN","iSPN")    
 
     nas.plotIncomingConnections(neuronType="dSPN",preType="iSPN")
     nas.plotIncomingConnections(neuronType="dSPN",preType="dSPN")
@@ -397,9 +431,6 @@ if __name__ == "__main__":
     nas.plotIncomingConnections(neuronType="LTS",preType="ChIN")
     nas.plotIncomingConnections(neuronType="LTS",preType="FSN")  
 
-    # 2-5 ChIN should connect to each MS (approx)
-    nas.plotIncomingConnections(neuronType="dSPN",preType="ChIN")
-    nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")  
   
     nas.plotIncomingConnections(neuronType="ChIN",preType="dSPN")
     nas.plotIncomingConnections(neuronType="ChIN",preType="iSPN")  
