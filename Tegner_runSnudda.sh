@@ -30,7 +30,7 @@
 #   As a bonus, it is much faster than regular ethernet connections. 
 #..
 
-JOBDIR=networks/Medium10000da
+JOBDIR=networks/Skynet10000
 #SIMSIZE=120000
 #SIMSIZE=2174
 SIMSIZE=10000
@@ -109,7 +109,7 @@ else
     fi
 
     echo ">>> Input: "`date`
-    ${ANACONDA_HOME}/bin/python3 snudda.py input ${JOBDIR} --input config/input-tinytest.json
+    ${ANACONDA_HOME}/bin/python3 snudda.py input ${JOBDIR} --input config/input-tinytest-v5.json
 
     #.. Shut down cluster
     ipcluster stop	

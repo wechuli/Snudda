@@ -1291,6 +1291,7 @@ class SnuddaSimulate(object):
           syn = channelModule(section(sectionX))
           nc = h.NetCon(vs,syn)
           
+          # TODO: remove! not in use...
           # set weights based on individual (scale factor individual--svenska for invandrare)
           # rheobase [const,phasic (pA)]; 
           #     FSN -  FS5:[248,260], FS1:[183,275], FS16:[200,170], FS2:[8,242]
@@ -1318,7 +1319,9 @@ class SnuddaSimulate(object):
                     }
           ctype = name.split('_')[0]
           cell = self.config[name]["morphology"].split('/')[2]
-          nc.weight[0]  = neuronInput["conductance"].value * 1e6 * sfi[ctype][cell]      # microsiemens
+          if cell == 'str-ispn-e160118_c10_D2-m46-3-DE-v20190529': w = 0.7
+          else: w = 1 #sfi[ctype][cell]
+          nc.weight[0]  = neuronInput["conductance"].value * 1e6 * w       # microsiemens
           nc.threshold  = 0.1
           nc.delay      = 0.0
 
@@ -1588,7 +1591,7 @@ class SnuddaSimulate(object):
         v = self.sim.neuron.h.Vector()
         #import pdb
         #pdb.set_trace() 
-        # TODO updated from getatribute. No reason to use getattribute
+        # TODO updated from getatribute. No reason to use getattribute?
         v.record(cell.icell.soma[0](0.5)._ref_v)
         self.vSave.append(v)
         self.vKey.append(cellKey)
@@ -1599,23 +1602,6 @@ class SnuddaSimulate(object):
         
   ############################################################################
     
-  # depricated. TODO remove? 
-  # TODO if so also remove cell.vinit from class
-  def set_vinit(self, cellID=None):
-    '''set vinit for each cell individually'''
-    
-    if(cellID is None):
-      cellID = self.neuronID
-    cells = dict((k,self.neurons[k]) \
-                 for k in cellID if not self.isVirtualNeuron[k])
-    
-    for cId,cell in cells.items():
-      for compartment in [cell.icell.dend,cell.icell.axon,cell.icell.soma]:
-        for sec in compartment:
-          for seg in sec:
-            seg.v = cell.vinit
-
-  
   def run(self,t=1000.0,holdV=None):
 
     self.setupPrintSimTime(t)
@@ -2108,11 +2094,11 @@ if __name__ == "__main__":
   
   if(voltFile is not None):
     #sim.addRecording(sideLen=None) # Side len let you record from a subset
-    sim.addRecordingOfType("dSPN",2)
-    sim.addRecordingOfType("iSPN",2)
-    sim.addRecordingOfType("FSN",2)
-    sim.addRecordingOfType("LTS",2)
-    sim.addRecordingOfType("ChIN",2)
+    sim.addRecordingOfType("dSPN",10)
+    sim.addRecordingOfType("iSPN",10)
+    sim.addRecordingOfType("FSN",10)
+    sim.addRecordingOfType("LTS",10)
+    sim.addRecordingOfType("ChIN",10)
     # TODO implement recording of all individual cell types in network (one copy each)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator

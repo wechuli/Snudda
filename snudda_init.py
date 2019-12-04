@@ -773,6 +773,7 @@ class SnuddaInit(object):
                                                  "failRate" : MSD1GABAfailRate})
 
     # Doig, Magill, Apicella, Bolam, Sharott 2014:
+    # TODO: update to english?
     # 5166 +/- 285 GABA synapses on ChIN (antag att 95% av dem är från MS?)
     # 2859 +/- Assymetrical (Glut) synapses on ChIN
 

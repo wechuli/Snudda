@@ -23,7 +23,7 @@ NEURON {
     POINT_PROCESS tmGabaA
     RANGE tau1, tau2, e, i, q
     RANGE tau, tauR, tauF, U, u0
-    RANGE damod, maxMod, level
+    RANGE failRate, damod, maxMod, level
     NONSPECIFIC_CURRENT i
 }
 
@@ -37,12 +37,13 @@ PARAMETER {
     : q = 2, now included in tau1,tau2 parameters.     
     tau1= 0.25 (ms) : ORIG: 0.5ms
     tau2 = 3.75 (ms)  : ORIG: 7.5ms, tau2 > tau1
-    e = -90 (mV)
+    e = -65 (mV)
     tau = 3 (ms)
     tauR = 500 (ms)  : tauR > tau
     tauF = 0 (ms)    : tauF >= 0
     U = 0.1 (1) <0, 1>
     u0 = 0 (1) <0, 1>
+    failRate = 0	
     damod = 0
     maxMod = 1
     level = 0
@@ -84,26 +85,38 @@ DERIVATIVE state {
 }
 
 NET_RECEIVE(weight (uS), y, z, u, tsyn (ms)) {
+    LOCAL result
     INITIAL {
         y = 0
         z = 0
         u = u0
         tsyn = t
     }
-    z = z*exp(-(t-tsyn)/tauR)
-    z = z + (y*(exp(-(t-tsyn)/tau) - exp(-(t-tsyn)/tauR)) / (tau/tauR - 1) )
-    y = y*exp(-(t-tsyn)/tau)
-    x = 1-y-z
-    if (tauF > 0) {
-        u = u*exp(-(t-tsyn)/tauF)
-        u = u + U*(1-u)
-    } else {
-        u = U
+    if ( weight <= 0 ) {
+VERBATIM
+        return;
+ENDVERBATIM
     }
+    if( urand() > failRate ) { 
+      z = z*exp(-(t-tsyn)/tauR)
+      z = z + (y*(exp(-(t-tsyn)/tau) - exp(-(t-tsyn)/tauR)) / (tau/tauR - 1) )
+      y = y*exp(-(t-tsyn)/tau)
+      x = 1-y-z
+      if (tauF > 0) {
+          u = u*exp(-(t-tsyn)/tauF)
+          u = u + U*(1-u)
+      } else {
+          u = U
+      }
     A = A + weight*factor*x*u / U
     B = B + weight*factor*x*u / U
     y = y + x*u
     tsyn = t
+    }
+}
+
+FUNCTION urand() {
+    urand = scop_random(1)
 }
 
 
@@ -115,8 +128,13 @@ FUNCTION modulation() {
 
 COMMENT
 
+(2019-11-25) Synaptic failure rate (failRate) added. Random factor, no
+reproducibility guaranteed in parallel sim.
+
+(2019-09-12) Set GABA reversal potential to -65mV
+
 (2019-08-21) Normalise activation by U, to make sure first activation has
-             amplitude set by g
+amplitude set by g
 
 (2019-06-05) Q-factor was calculated in INITAL block, which meant if
 the synapse was reinitalised then the time constants changed with each
