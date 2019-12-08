@@ -1521,16 +1521,16 @@ class SnuddaSimulate(object):
 
   def addVoltageClamp(self,cellID,voltage,duration,res=1e-9,saveIflag=False):
 
-    if(type(cellID) != list):
+    if(type(cellID) not in [list,np.ndarray]):
       cellID = [cellID]
 
-    if(type(voltage) != list):
+    if(type(voltage) not in [list,np.ndarray]):
       voltage = [voltage for x in cellID]
 
-    if(type(duration) != list):
+    if(type(duration) not in [list,np.ndarray]):
       duration = [duration for x in cellID]
       
-    if(type(res) != list):
+    if(type(res) not in [list,np.ndarray]):
       res = [res for x in cellID]
 
     if(saveIflag and (len(self.tSave) == 0 or self.tSave is None)):
@@ -1538,10 +1538,18 @@ class SnuddaSimulate(object):
       self.tSave.record(self.sim.neuron.h._ref_t)
 
     for cID,v,rs,dur in zip(cellID,voltage,res,duration):
-      
-      if(not(cID in self.neuronID)):
-        # Not in the list of neuronID on the worker, skip it
-        continue
+
+      try:
+        if(not(cID in self.neuronID)):
+          # Not in the list of neuronID on the worker, skip it
+          continue
+      except:
+        import traceback
+        tstr = traceback.format_exc()
+        self.writeLog(tstr)
+        import pdb
+        pdb.set_trace()
+        
       
       self.writeLog("Adding voltage clamp to " + str(cID))
       s = self.neurons[cID].icell.soma[0]
@@ -2011,10 +2019,7 @@ if __name__ == "__main__":
   if(not os.path.exists(saveDir)):
     print("Creating directory " + saveDir)
     os.makedirs(saveDir, exist_ok=True)
-  
-  if(args.verbose):
-    self.verbose=True
-  
+    
   # Get the SlurmID, used in default file names
   SlurmID = os.getenv('SLURM_JOBID')
   
@@ -2087,8 +2092,9 @@ if __name__ == "__main__":
                        inputFile=inputFile,
                        disableGapJunctions=disableGJ,
                        disableSynapses=disableSynapses,
-                       logFile=logFile)
-
+                       logFile=logFile,
+                       verbose=args.verbose)
+  
   sim.addExternalInput()
   #sim.addCurrentFromProtocol()
   

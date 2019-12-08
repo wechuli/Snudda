@@ -11,18 +11,18 @@
 #
 # * Edit snudda_init_custom.py to have the neurons you want.
 #
-# * Generate network (note the x x are ignored, but argparse wanted them there):
+# * Generate network 
 #
-#  python3 snudda_calibrate_synapses.py setup networks/SynTest-v2 x x
-#  python3 snudda.py place networks/SynTest-v2
-#  python3 snudda.py detect networks/SynTest-v2
-#  python3 snudda.py prune networks/SynTest-v2
+#  python3 snudda_calibrate_synapses.py setup Planert2010 networks/Planert2010-v1
+#  python3 snudda.py place networks/Planert2010-v1
+#  python3 snudda.py detect networks/Planert2010-v1
+#  python3 snudda.py prune networks/Planert2010-v1
 
 # * Figure out where to put the slcie cut (with plotOnly equation is ignored)
 # 
-#  python3 snudda_cut.py networks/SynTest-v2/network-pruned-synapses.hdf5 "z>0" --plotOnly
+#  python3 snudda_cut.py networks/Planert2010-v1/network-pruned-synapses.hdf5 "z>0" --plotOnly
 #
-# * Look at networks/SynTest-v2/network-cut-slice.hdf5.pdf to decide cut plane
+# * Look at networks/Planert2010-v1/network-cut-slice.hdf5.pdf to decide cut plane
 #
 # * Compile mod files (we now have failure rates for GABA)
 #
@@ -30,18 +30,18 @@
 #
 # * Cut the slice, so z > 0.00504 is kept
 #
-#  python3 snudda_cut.py networks/SynTest-v2/network-pruned-synapses.hdf5 "abs(z)<100e-6"
+#  python3 snudda_cut.py networks/Planert2010-v1/network-pruned-synapses.hdf5 "abs(z)<100e-6"
 #
-# * Look at networks/SynTest-v2/network-cut-slice.hdf5.pdf to verify cut plane
+# * Look at networks/Planert2010-v1/network-cut-slice.hdf5.pdf to verify cut plane
 #
 # * Run dSPN -> iSPN calibration (you get dSPN -> dSPN data for free then)
 #
-#  mpiexec -n 12 -map-by socket:OVERSUBSCRIBE python3 snudda_calibrate_synapses.py run networks/SynTest-v2/network-cut-slice.hdf5 dSPN iSPN
+#  mpiexec -n 12 -map-by socket:OVERSUBSCRIBE python3 snudda_calibrate_synapses.py run Planert2010 networks/Planert2010-v1/network-cut-slice.hdf5 --pre dSPN --post iSPN
 #
 # *  Analyse
 #
-#  python3 snudda_calibrate_synapses.py analyse networks/SynTest-v2/network-cut-slice.hdf5 dSPN iSPN
-# python3 snudda_calibrate_synapses.py analyse networks/SynTest-v2/network-cut-slice.hdf5 dSPN dSPN
+#  python3 snudda_calibrate_synapses.py analyse networks/Planert2010-v1/network-cut-slice.hdf5 dSPN iSPN
+# python3 snudda_calibrate_synapses.py analyse Planert2010 networks/Planert2010-v1/network-cut-slice.hdf5 --pre dSPN --post dSPN
 #
 # * Look at plot with traces overlayed and histogram of voltage amplitudes
 # (When you do preType to postType, you also get preType to preType for free
@@ -105,14 +105,14 @@ class SnuddaCalibrateSynapses(object):
 
   ############################################################################
 
-  def setup(self,simName):
+  def setup(self,simName,expType,nMSD1=120,nMSD2=120,nFS=20,nLTS=0,nChIN=0):
 
     from snudda_init import SnuddaInit
 
     configName= simName + "/network-config.json"
     cnc = SnuddaInit(structDef={},configName=configName,nChannels=1)
-    cnc.defineStriatum(nMSD1=120,nMSD2=120,nFS=20,nLTS=0,nChIN=0,
-                       volumeType="slice")
+    cnc.defineStriatum(nMSD1=nMSD1,nMSD2=nMSD2,nFS=nFS,nLTS=nLTS,nChIN=nChIN,
+                       volumeType="slice",sideLen=200e-6)
 
     dirName = os.path.dirname(configName)
   
@@ -133,9 +133,9 @@ class SnuddaCalibrateSynapses(object):
     print("\n!!! Remember to compile the mod files: nrnivmodl cellspecs/mechanisms")
 
     print("\nTo run for example dSPN -> iSPN (and dSPN->dSPN) calibration:")
-    print("mpiexec -n 12 -map-by socket:OVERSUBSCRIBE python3 snudda_calibrate_synapses.py run " + str(simName) + "/network-cut-slice.hdf5 dSPN iSPN")
+    print("mpiexec -n 12 -map-by socket:OVERSUBSCRIBE python3 snudda_calibrate_synapses.py run " + str(expType) + " " + str(simName) + "/network-cut-slice.hdf5 dSPN iSPN")
 
-    print("\npython3 snudda_calibrate_synapses.py analyse networks/SynTest-v2/network-cut-slice.hdf5 dSPN iSPN\npython3 snudda_calibrate_synapses.py analyse networks/SynTest-v2/network-cut-slice.hdf5 dSPN dSPN")
+    print("\npython3 snudda_calibrate_synapses.py analyse " + str(expType) + " " + str(simName) + "/network-cut-slice.hdf5 dSPN iSPN\npython3 snudda_calibrate_synapses.py analyse " + str(simName) + "/network-cut-slice.hdf5 iSPN dSPN")
     
   ############################################################################
 
@@ -195,7 +195,7 @@ class SnuddaCalibrateSynapses(object):
           
   ############################################################################
   
-  def runSim(self):
+  def runSim(self,GABArev):
     
     self.snuddaSim = SnuddaSimulate(networkFile=self.networkFile,
                                     inputFile=None,
@@ -218,7 +218,7 @@ class SnuddaCalibrateSynapses(object):
     # Set the holding voltage
     self.setupHoldingVolt(holdV=self.holdV,simEnd=simEnd)
 
-    self.setGABArev(-40e-3)
+    self.setGABArev(GABArev)
     
     
     # Add current injections defined in init
@@ -286,8 +286,10 @@ class SnuddaCalibrateSynapses(object):
   
   # This extracts all the voltage deflections, to see how strong they are
   
-  def analyse(self,maxDist=None,nMaxShow=10):
+  def analyse(self,expType,maxDist=None,nMaxShow=10):
 
+    self.setupExpData()
+    
     if(maxDist is None):
       maxDist = self.maxDist
     
@@ -345,11 +347,11 @@ class SnuddaCalibrateSynapses(object):
         
     # Fig names:
     traceFig = os.path.dirname(self.networkFile) \
-      + "/figures/synapse-calibration-volt-traces-" \
+      + "/figures/" + expType +"synapse-calibration-volt-traces-" \
       + self.preType + "-" + self.postType + ".pdf"
 
     histFig = os.path.dirname(self.networkFile) \
-      + "/figures/synapse-calibration-volt-histogram-" \
+      + "/figures/" + expType + "synapse-calibration-volt-histogram-" \
       + self.preType + "-" + self.postType + ".pdf"
 
     figDir = os.path.dirname(self.networkFile) + "/figures"
@@ -376,20 +378,39 @@ class SnuddaCalibrateSynapses(object):
     print("Mean amp: " + str(np.mean(amp)) + " +/- " + str(np.std(amp)))
     print("Amps: " + str(amp))
       
-    nShown = 0
       
     # Now we have all synapse deflections in synapseData
-    matplotlib.rcParams.update({'font.size': 22})    
+    matplotlib.rcParams.update({'font.size': 22})
+
+    sortIdx = np.argsort(amp)
+    if(len(sortIdx) > nMaxShow):
+      keepIdx = [sortIdx[int(np.round(x))] \
+                 for x in np.linspace(0,len(sortIdx)-1,nMaxShow)]
+    else:
+      keepIdx = sortIdx
+      
     plt.figure()
-    for t,v in synapseData:
-      if(nShown is not None and nShown > nMaxShow):
-        print("Over nMaxShow traces, skipping")
-        continue
+    for x in keepIdx:
+
+      t,v = synapseData[x]
       
       plt.plot((t-t[0])*1e3,(v-v[0])*1e3,color="black")
-      nShown += 1
       
-    plt.scatter(tMax*1e3,amp*1e3,color="blue",marker=".")
+    plt.scatter(tMax*1e3,amp*1e3,color="blue",marker=".",s=100)
+
+    if((expType,self.preType,self.postType) in self.expData):
+      expMean,expStd = self.expData[(expType,self.preType,self.postType)]
+
+      tEnd = (t[-1]-t[0])*1e3
+
+      axes = plt.gca()
+      ay = axes.get_ylim()
+      # Plot SD or 1.96 SD?
+      plt.errorbar(tEnd,expMean,expStd,ecolor="red",
+                   marker='o',color="red")
+      axes.set_ylim(ay)
+      
+      
     plt.xlabel("Time (ms)")
     plt.ylabel("Voltage (mV)")
     #plt.title(str(len(synapseData)) + " traces")
@@ -412,18 +433,50 @@ class SnuddaCalibrateSynapses(object):
     import pdb
     pdb.set_trace()
 
+############################################################################
+
+  def setupExpData(self):
+
+    self.expData = dict()
+
+    planertD1D1 = (0.24,0.15)
+    planertD1D2 = (0.33,0.15)
+    planertD2D1 = (0.27,0.09)
+    planertD2D2 = (0.45,0.44)
+    planertFSD1 = (4.8,4.9)
+    planertFSD2 = (3.1,4.1)
+
+    self.expData[("Planert2010","dSPN","dSPN")] = planertD1D1
+    self.expData[("Planert2010","dSPN","iSPN")] = planertD1D2
+    self.expData[("Planert2010","iSPN","dSPN")] = planertD2D1
+    self.expData[("Planert2010","iSPN","iSPN")] = planertD2D2    
+    self.expData[("Planert2010","FSN","dSPN")]  = planertFSD1
+    self.expData[("Planert2010","FSN","iSPN")]  = planertFSD2    
+
+
+    
+############################################################################
+    
 if __name__ == "__main__":
 
   from argparse import ArgumentParser
 
   parser = ArgumentParser(description="Calibrate synapse conductances")
   parser.add_argument("task", choices=["setup","run","analyse"])
+  parser.add_argument("expType",help="Experiment we replicate",
+                      choices=["Planert2010","Szydlowski2013"])
   parser.add_argument("networkFile", \
                       help="Network file (hdf5) or network directory")
-  parser.add_argument("preType",help="Pre synaptic neuron type")
-  parser.add_argument("postType",help="Post synaptic neuron type (for run task, postType can be 'ALL' to record from all neurons)")
-  parser.add_argument("--maxDist",help="Only check neuron pairs within (mum)")
+  parser.add_argument("--preType","--pre",
+                      help="Pre synaptic neuron type",
+                      default="dSPN")
+  parser.add_argument("--postType","--post",
+                      help="Post synaptic neuron type (for run task, postType can be 'ALL' to record from all neurons)",
+                      default="ALL")
+  parser.add_argument("--maxDist",help="Only check neuron pairs within (mum)",
+                      type=float,default=None)
   args = parser.parse_args()
+  
   if(args.maxDist is None):
     maxDist = 50e-6
   elif(args.maxDist == "None"):
@@ -433,19 +486,50 @@ if __name__ == "__main__":
 
   print("Using maxDist = " + str(maxDist))
     
+
+  if(args.expType == "Planert2010"):
+    nMSD1 = 120
+    nMSD2 = 120
+    nFS   = 20
+    nLTS  = 0
+    nChIN = 0
+
+    holdV = -80e-3
+    maxDist = 100e-6 if args.maxDist is None else args.maxDist
+    GABArev = -40e-3
+    
+  elif(args.expType == "Szydlowski2013"):
+    nMSD1 = 10
+    nMSD2 = 10
+    nFS   = 20
+    nLTS  = 20
+    nChIN = 0
+
+    holdV = -76e-3
+    maxDist = 200e-6 if args.maxDist is None else args.maxDist
+    GABArev = -39e-3
+    
+  else:
+    print("Unknown expType = " + str(expType))
+    exit(-1)
+
   scs = SnuddaCalibrateSynapses(networkFile=args.networkFile,
                                 preType=args.preType,
                                 postType=args.postType,
-                                maxDist=maxDist)
-
+                                maxDist=maxDist,
+                                holdV=holdV)
+    
   if(args.task == "setup"):
-    scs.setup(args.networkFile)
+    scs.setup(args.networkFile,
+              expType=args.expType,
+              nMSD1=nMSD1,nMSD2=nMSD2,
+              nFS=nFS,nLTS=nLTS,nChIN=nChIN)
     
   elif(args.task == "run"):
-    scs.runSim()
+    scs.runSim(GABArev=GABArev)
 
   elif(args.task == "analyse"):
-    scs.analyse()
+    scs.analyse(args.expType)
   
   
   

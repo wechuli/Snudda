@@ -2,9 +2,9 @@
 #SBATCH -t 0-15:59:00
 #SBATCH --time-min=3:59:00
 #SBATCH -J SnuddaLARGE
-#SBATCH -A 2019-3-304
-#SBATCH -o createNet_o.%j
-#SBATCH -e createNet_e.%j
+#SBATCH -A 2019-3-644
+#SBATCH -o out_tegner.%j
+#SBATCH -e error_tegner.%j
 #SBATCH --nodes=2-4
 #SBATCH --ntasks-per-node=24
 

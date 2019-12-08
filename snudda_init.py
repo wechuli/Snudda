@@ -632,6 +632,7 @@ class SnuddaInit(object):
     # Temp disable dist dep pruning
     # FSDistDepPruning = None
     FSgGABA = [1.1e-9, 1.5e-9] # cond (1nS Gittis et al 2010), condStd
+    FStoLTSgGABA = [1.1e-10, 1.5e-10] # cond (1nS Gittis et al 2010), condStd
     FSgGapJunction = [0.5e-9, 0.1e-9]
     # (gap junctions: 0.5nS, P=0.3 -- Galarreta Hestrin 2002, Koos Tepper 1999)
     # total 8.4nS ?? Gittis et al 2010??
@@ -664,7 +665,7 @@ class SnuddaInit(object):
                          targetName="dSPN",
                          connectionType="GABA",
                          distPruning=FSDistDepPruning,
-                         f1=0.5, softMax=8, mu2=2, a3=1.0, 
+                         f1=0.5, softMax=5, mu2=2, a3=1.0, 
                          conductance=FSgGABA,
                          parameterFile=pfFSdSPN,
                          modFile="tmGabaA",
@@ -675,7 +676,7 @@ class SnuddaInit(object):
                          targetName="iSPN",
                          connectionType="GABA",
                          distPruning=FSDistDepPruning,
-                         f1=0.5, softMax=8, mu2=2, a3=0.9, 
+                         f1=0.5, softMax=5, mu2=2, a3=0.9, 
                          conductance=FSgGABA,
                          parameterFile=pfFSiSPN,
                          modFile="tmGabaA",
@@ -686,8 +687,8 @@ class SnuddaInit(object):
                          targetName="LTS",
                          connectionType="GABA",
                          distPruning=None,
-                         f1=1.0, softMax=8, mu2=2,a3=0.3,
-                         conductance=FSgGABA,
+                         f1=0.15, softMax=3, mu2=2,a3=1.0,
+                         conductance=FStoLTSgGABA,
                          parameterFile=pfFSLTS,
                          modFile="tmGabaA",
                          channelParamDictionary=None)
@@ -745,6 +746,9 @@ class SnuddaInit(object):
     pfdSPNdSPN = "synapses/v2/PlanertFitting-DD-tmgaba-fit.json"
     pfdSPNiSPN = "synapses/v2/PlanertFitting-DI-tmgaba-fit.json"
     pfdSPNChIN = None
+
+    SPN2ChINDistDepPruning = "1-np.exp(-(0.4*d/60e-6)**2)" # Chuhma about 20pA response from 10% SPN, we need to reduce activity, try dist dep pruning (already so few synapses and connectivity)
+
     
     self.addNeuronTarget(neuronName="dSPN",
                          targetName="dSPN",
@@ -786,7 +790,7 @@ class SnuddaInit(object):
     self.addNeuronTarget(neuronName="dSPN",
                          targetName="ChIN",
                          connectionType="GABA",
-                         distPruning=None,
+                         distPruning=SPN2ChINDistDepPruning,
                          f1=0.1, softMax=3, mu2=2.4,a3=0.1,
                          conductance=MSD1gGABA,
                          parameterFile=pfdSPNChIN,
@@ -836,6 +840,7 @@ class SnuddaInit(object):
     pfiSPNChIN = None
 
     
+    
     self.addNeuronTarget(neuronName="iSPN",
                          targetName="dSPN",
                          connectionType="GABA",
@@ -864,11 +869,12 @@ class SnuddaInit(object):
                                                  "tau2" : 12.4e-3,
                                                  "failRate" : MSD2GABAfailRate})
 
+    
     # See comment for dSPN to ChIN
     self.addNeuronTarget(neuronName="iSPN",
                          targetName="ChIN",
                          connectionType="GABA",
-                         distPruning=None,
+                         distPruning=SPN2ChINDistDepPruning,
                          f1=0.1, softMax=3, mu2=2.4,a3=0.1,
                          conductance=MSD2gGABA,
                          parameterFile=pfiSPNChIN,
@@ -963,7 +969,7 @@ class SnuddaInit(object):
                          targetName="dSPN",
                          connectionType="GABA",
                          distPruning=LTSDistDepPruning,
-                         f1=1.0, softMax=None, mu2=3, a3=0.3,
+                         f1=1.0, softMax=15, mu2=3, a3=0.3,
                          conductance=LTSgGABA,
                          parameterFile=pfLTSdSPN,
                          modFile="tmGabaA",
@@ -975,7 +981,7 @@ class SnuddaInit(object):
                          targetName="iSPN",
                          connectionType="GABA",
                          distPruning=LTSDistDepPruning,
-                         f1=1.0, softMax=None, mu2=3, a3=0.3,
+                         f1=1.0, softMax=15, mu2=3, a3=0.3,
                          conductance=LTSgGABA,
                          parameterFile=pfLTSiSPN,
                          modFile="tmGabaA",
