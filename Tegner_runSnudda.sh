@@ -30,11 +30,13 @@
 #   As a bonus, it is much faster than regular ethernet connections. 
 #..
 
-JOBDIR=networks/Skynet10000
+
 #SIMSIZE=120000
 #SIMSIZE=2174
 SIMSIZE=10000
 #SIMSIZE=1760000
+
+JOBDIR=networks/Skynet$SIMSIZE
 
 if [ $SLURM_PROCID -gt 0 ]; then
 	mock_string="Not main process"
@@ -109,7 +111,7 @@ else
     fi
 
     echo ">>> Input: "`date`
-    ${ANACONDA_HOME}/bin/python3 snudda.py input ${JOBDIR} --input config/input-tinytest-v5.json
+    ${ANACONDA_HOME}/bin/python3 snudda.py input ${JOBDIR} --input config/input-tinytest-v5.json --time 3.0
 
     #.. Shut down cluster
     ipcluster stop	
