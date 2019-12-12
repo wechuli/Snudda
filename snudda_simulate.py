@@ -2126,7 +2126,7 @@ if __name__ == "__main__":
   v2 = sim.sim.neuron.h.Vector(vgaba)
   vglut = [1 if (ht>3500 and ht<4000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
   v3 = sim.sim.neuron.h.Vector(vglut)'''
-  vplay = [1 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.1)]
+  vplay = [1 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.025)]
   v = sim.sim.neuron.h.Vector(vplay)
   #sim.modTrans.append( vneuron )
   sim.applyDopamine(transient=v)
