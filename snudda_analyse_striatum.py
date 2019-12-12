@@ -14,7 +14,7 @@ from snudda_analyse import SnuddaAnalyse
 
 class SnuddaAnalyseStriatum(SnuddaAnalyse):
 
-  def __init__(self,simDir):
+  def __init__(self,simDir,volumeType="cube"):
 
     if(os.path.isfile(simDir)):
       # We allow the user to also send in a hdf5 file as simDir...
@@ -32,7 +32,7 @@ class SnuddaAnalyseStriatum(SnuddaAnalyse):
 
     print("Loading " + str(hdf5File))
         
-    super().__init__(hdf5File=hdf5File,loadCache=True)
+    super().__init__(hdf5File=hdf5File,loadCache=True,volumeType=volumeType)
 
   ############################################################################
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     print("Please specify which directory the striatum network files is in")
     exit(-1)
 
-  nas = SnuddaAnalyseStriatum(simDir)
+  nas = SnuddaAnalyseStriatum(simDir,volumeType="cube")
 
 
 
@@ -159,6 +159,129 @@ if __name__ == "__main__":
   #import pdb
   #pdb.set_trace()
 
+
+    
+  
+
+
+  if(plotHenrike):
+
+    yMaxH = None #0.5
+
+    nas.plotConnectionProbability("dSPN","iSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[50e-6,100e-6],\
+                                  expData=[3/47.0,3/66.0],
+                                  expDataDetailed=[(3,47),(3,66)],
+                                  yMax=yMaxH)
+    nas.plotConnectionProbability("dSPN","dSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[50e-6,100e-6],\
+                                  expData=[5/19.0,3/43.0],
+                                  expDataDetailed=[(5,19),(3,43)],
+                                  yMax=yMaxH)    
+    nas.plotConnectionProbability("iSPN","dSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[50e-6,100e-6],\
+                                  expData=[13/47.0,10/80.0],
+                                  expDataDetailed=[(13,47),(10,80)],
+                                  yMax=yMaxH)
+    nas.plotConnectionProbability("iSPN","iSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[50e-6,100e-6],\
+                                  expData=[14/39.0,7/31.0],
+                                  expDataDetailed=[(14,39),(7,31)],
+                                  yMax=yMaxH)
+      
+
+
+
+  nas.plotNumSynapsesPerPair("dSPN","dSPN")
+  nas.plotNumSynapsesPerPair("dSPN","iSPN")    
+  nas.plotNumSynapsesPerPair("iSPN","dSPN")
+  nas.plotNumSynapsesPerPair("iSPN","iSPN")    
+
+  # !!! Check edge effects
+
+  nas.plotIncomingConnections(neuronType="iSPN",preType="FSN")
+  nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")
+  nas.plotIncomingConnections(neuronType="iSPN",preType="LTS")
+  
+  nas.plotIncomingConnections(neuronType="dSPN",preType="dSPN")
+  nas.plotIncomingConnections(neuronType="dSPN",preType="iSPN")
+  nas.plotIncomingConnections(neuronType="iSPN",preType="dSPN")
+  nas.plotIncomingConnections(neuronType="iSPN",preType="iSPN")
+  
+    
+  if(True):
+    # 2-5 ChIN should connect to each MS (approx)
+    nas.plotIncomingConnections(neuronType="dSPN",preType="ChIN")
+    nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")  
+
+  
+  if(True):
+
+    nas.plotConnectionProbability("FSN","iSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[100e-6, 150e-6, 250e-6],
+                                  expData=[6/9.0, 21/54.0, 27/77.0],
+                                  expDataDetailed=[(6,9),(21,54),(27,77)],
+                                  yMax=None)
+
+    nas.plotConnectionProbability("FSN","dSPN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[100e-6, 150e-6, 250e-6],
+                                  expData=[8/9.0, 29/48.0, 48/90.0],
+                                  expDataDetailed=[(8,9),(29,48),(48,90)],
+                                  yMax=None)
+
+    nas.plotNumSynapsesPerPair("FSN","dSPN")
+    nas.plotNumSynapsesPerPair("FSN","iSPN")  
+
+    nas.plotConnectionProbability("FSN","FSN", \
+                                  dist3D=dist3D, \
+                                  expMaxDist=[250e-6],\
+                                  expData=[7/12.0],
+                                  expDataDetailed=[(7,12)] )
+
+    nas.plotNumSynapsesPerPair("FSN","FSN")  
+    
+
+    nas.plotConnectionProbability("FSN","FSN", \
+                                  dist3D=dist3D ,
+                                  connectionType="gapjunctions",
+                                  expMaxDist=[250e-6,250e-6],
+                                  expData=[2/6.0,3/7.0],
+                                  expDataDetailed=[(2,6),(3,7)],)
+
+    nas.plotNumSynapsesPerPair("FSN","FSN",connectionType="gapjunctions")
+   
+    nas.plotIncomingConnections(neuronType="FSN",preType="FSN",
+                                connectionType="gapjunctions")
+
+  
+  
+  nas.plotFSLTScumDist()
+  nas.plotFSLTScumDist(plotFS=False)
+  nas.plotFSLTScumDist(plotLTS=False)
+
+  
+  nas.plotNumSynapsesPerPair("dSPN","ChIN")
+  nas.plotNumSynapsesPerPair("iSPN","ChIN")
+  
+  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
+  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
+  
+  nas.plotNumSynapsesPerPair("ChIN","FSN")  
+
+
+  
+
+
+  
+  nas.plotSynapseCumDist()
+
+  nas.plotSynapseDist(densityFlag=True)
 
   if(plotLTS):
 
@@ -224,115 +347,7 @@ if __name__ == "__main__":
                                 expData=[0.05])
   
   
-    
-  if(True):
-    # 2-5 ChIN should connect to each MS (approx)
-    nas.plotIncomingConnections(neuronType="dSPN",preType="ChIN")
-    nas.plotIncomingConnections(neuronType="iSPN",preType="ChIN")  
-    
-  
 
-  if(True):
-
-    nas.plotConnectionProbability("FSN","iSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[100e-6, 150e-6, 250e-6],
-                                  expData=[6/9.0, 21/54.0, 27/77.0],
-                                  expDataDetailed=[(6,9),(21,54),(27,77)],
-                                  yMax=None)
-
-    nas.plotConnectionProbability("FSN","dSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[100e-6, 150e-6, 250e-6],
-                                  expData=[8/9.0, 29/48.0, 48/90.0],
-                                  expDataDetailed=[(8,9),(29,48),(48,90)],
-                                  yMax=None)
-
-    nas.plotNumSynapsesPerPair("FSN","dSPN")
-    nas.plotNumSynapsesPerPair("FSN","iSPN")  
-
-    nas.plotConnectionProbability("FSN","FSN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[250e-6],\
-                                  expData=[7/12.0],
-                                  expDataDetailed=[(7,12)] )
-
-    nas.plotNumSynapsesPerPair("FSN","FSN")  
-    
-
-    nas.plotConnectionProbability("FSN","FSN", \
-                                  dist3D=dist3D ,
-                                  connectionType="gapjunctions",
-                                  expMaxDist=[250e-6,250e-6],
-                                  expData=[2/6.0,3/7.0],
-                                  expDataDetailed=[(2,6),(3,7)],)
-
-    nas.plotNumSynapsesPerPair("FSN","FSN",connectionType="gapjunctions")
-   
-    nas.plotIncomingConnections(neuronType="FSN",preType="FSN",
-                                connectionType="gapjunctions")
-
-
-  if(plotHenrike):
-
-    yMaxH = None #0.5
-
-    nas.plotConnectionProbability("dSPN","iSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[50e-6,100e-6],\
-                                  expData=[3/47.0,3/66.0],
-                                  expDataDetailed=[(3,47),(3,66)],
-                                  yMax=yMaxH)
-    nas.plotConnectionProbability("dSPN","dSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[50e-6,100e-6],\
-                                  expData=[5/19.0,3/43.0],
-                                  expDataDetailed=[(5,19),(3,43)],
-                                  yMax=yMaxH)    
-    nas.plotConnectionProbability("iSPN","dSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[50e-6,100e-6],\
-                                  expData=[13/47.0,10/80.0],
-                                  expDataDetailed=[(13,47),(10,80)],
-                                  yMax=yMaxH)
-    nas.plotConnectionProbability("iSPN","iSPN", \
-                                  dist3D=dist3D, \
-                                  expMaxDist=[50e-6,100e-6],\
-                                  expData=[14/39.0,7/31.0],
-                                  expDataDetailed=[(14,39),(7,31)],
-                                  yMax=yMaxH)
-      
-
-
-
-  nas.plotNumSynapsesPerPair("dSPN","dSPN")
-  nas.plotNumSynapsesPerPair("dSPN","iSPN")    
-  nas.plotNumSynapsesPerPair("iSPN","dSPN")
-  nas.plotNumSynapsesPerPair("iSPN","iSPN")    
-
-  
-  
-  nas.plotFSLTScumDist()
-  nas.plotFSLTScumDist(plotFS=False)
-  nas.plotFSLTScumDist(plotLTS=False)
-
-  
-  nas.plotNumSynapsesPerPair("dSPN","ChIN")
-  nas.plotNumSynapsesPerPair("iSPN","ChIN")
-  
-  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
-  nas.plotIncomingConnections(neuronType="FSN",preType="FSN")            
-  
-  nas.plotNumSynapsesPerPair("ChIN","FSN")  
-
-
-  
-
-
-  
-  nas.plotSynapseCumDist()
-
-  nas.plotSynapseDist(densityFlag=True)
   
   if(True):
     nas.plotConnectionProbability("LTS","ChIN", \

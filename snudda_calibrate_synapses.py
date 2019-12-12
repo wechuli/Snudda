@@ -112,7 +112,7 @@ class SnuddaCalibrateSynapses(object):
     configName= simName + "/network-config.json"
     cnc = SnuddaInit(structDef={},configName=configName,nChannels=1)
     cnc.defineStriatum(nMSD1=nMSD1,nMSD2=nMSD2,nFS=nFS,nLTS=nLTS,nChIN=nChIN,
-                       volumeType="slice",sideLen=200e-6)
+                       volumeType="slice",sideLen=200e-6,sliceDepth=150e-6)
 
     dirName = os.path.dirname(configName)
   
@@ -135,7 +135,7 @@ class SnuddaCalibrateSynapses(object):
     print("\nTo run for example dSPN -> iSPN (and dSPN->dSPN) calibration:")
     print("mpiexec -n 12 -map-by socket:OVERSUBSCRIBE python3 snudda_calibrate_synapses.py run " + str(expType) + " " + str(simName) + "/network-cut-slice.hdf5 dSPN iSPN")
 
-    print("\npython3 snudda_calibrate_synapses.py analyse " + str(expType) + " " + str(simName) + "/network-cut-slice.hdf5 dSPN iSPN\npython3 snudda_calibrate_synapses.py analyse " + str(simName) + "/network-cut-slice.hdf5 iSPN dSPN")
+    print("\npython3 snudda_calibrate_synapses.py analyse " + str(expType) + " " + str(simName) + "/network-cut-slice.hdf5 --pre dSPN --post iSPN\npython3 snudda_calibrate_synapses.py analyse " + str(simName) + "/network-cut-slice.hdf5 --pre iSPN --post dSPN")
     
   ############################################################################
 
@@ -408,6 +408,12 @@ class SnuddaCalibrateSynapses(object):
       # Plot SD or 1.96 SD?
       plt.errorbar(tEnd,expMean,expStd,ecolor="red",
                    marker='o',color="red")
+
+      modelMean = np.mean(amp)*1e3
+      modelStd = np.std(amp)*1e3
+      plt.errorbar(tEnd-2,modelMean,modelStd,ecolor="blue",
+                   marker="o",color="blue")
+      
       axes.set_ylim(ay)
       
       

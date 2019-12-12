@@ -18,6 +18,21 @@ class SnuddaLoad(object):
     self.config = None
     self.data = self.loadHDF5(network_file,loadSynapses)
     self.network_file = network_file
+
+    # This variable will only be set if the synapses are not kept in
+    # memory so we can access them later, otherwise the hdf5 file is
+    # automatically closed
+    self.hdf5File = None
+
+  ############################################################################
+
+  def __del__(self):
+
+    if(self.hdf5File is not None):
+      try:
+        self.hdf5File.close()
+      except:
+        print("Unable to close HDF5, alread closed?")
     
   ############################################################################
   
@@ -26,9 +41,12 @@ class SnuddaLoad(object):
 
     startTime = timeit.default_timer()
     data = dict([])
-    
-    with h5py.File(network_file,'r') as f:
 
+    f = h5py.File(network_file,'r')
+    
+    # with h5py.File(network_file,'r') as f:
+    if(True): # Need f open when loadSynapses = False, "with" doesnt work then
+    
       if("config" in f):
         print("Loading config data from HDF5")
         data["config"] = f["config"].value
@@ -61,7 +79,15 @@ class SnuddaLoad(object):
           data["synapseCoords"] = f["network/synapses"][:,2:5] \
                                 * f["meta/voxelSize"].value \
                                 + f["meta/simulationOrigo"].value
-                                  
+        else:
+          # Point the data structure to the synapses and gap junctions on file
+          # This will be slower, and only work while the file is open
+          data["synapses"] = f["network/synapses"]
+          data["gapJunctions"] = f["network/gapJunctions"]
+
+          # We need to keep f alive, since we did not load synapses into
+          # the memory
+          self.hdf5File = f
           
           # data["origSynapseCoords"] = f["network/origSynapseCoords"][:]
           # gatheredSynapses = f["network/origGJCoords"][:]
@@ -70,7 +96,9 @@ class SnuddaLoad(object):
         data["nNeurons"] = f["network/neurons/neuronID"].shape[0]
         assert data["nNeurons"] == f["network/neurons/neuronID"][-1] + 1, \
           "Internal error, something fishy with number of neurons found"
-          
+
+       
+        
       configFile = f["meta/configFile"].value
       if(type(configFile) == bytes):
         configFile = configFile.decode()
@@ -161,6 +189,11 @@ class SnuddaLoad(object):
         
       print("Load done. " + str(timeit.default_timer() - startTime))
 
+    if(loadSynapses):
+      f.close()
+    else:
+      self.hdf5File = f
+    
     return data
 
   ############################################################################
@@ -566,9 +599,16 @@ if __name__ == "__main__":
                       type=int)
   parser.add_argument("--listPost", help="List post synaptic neurons (slow)",
                       type=int)
+  parser.add_argument("--keepOpen", help="This prevents loading of synapses to memory, and keeps HDF5 file open", action="store_true")
+  
   args = parser.parse_args()
 
-  nl = SnuddaLoad(args.networkFile) 
+  if(args.keepOpen):
+    loadSynapses=False
+  else:
+    loadSynapses=True
+    
+  nl = SnuddaLoad(args.networkFile,loadSynapses=loadSynapses) 
 
   if(args.listN):
     print("Neurons in network: ")

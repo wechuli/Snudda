@@ -69,9 +69,12 @@ class SnuddaInit(object):
                       dMin=15e-6,
                       structCentre=None,
                       sideLen=None,
+                      sliceDepth=None,
                       meshBinWidth=None):
 
     if(structMesh == "cube"):
+      assert sliceDepth is None, \
+        "defineStructure: sliceDepth is not used for cubes, please set to None"
       assert sideLen is not None, \
         "defineStructure: cube needs sideLen specified"
       assert structCentre is not None, \
@@ -101,15 +104,16 @@ class SnuddaInit(object):
 
       if(sideLen is None):
         sideLen = 200e-6
+
+      if(sliceDepth is None):
+        sliceDepth = 150e-6
+
+      print("Using slice depth: " + str(sliceDepth))
         
-      sliceDepth = 150e-6
-      
       if(meshBinWidth is None):
         meshBinWidth = np.minimum(sideLen,sliceDepth)/3.0
         print("Setting meshBinWidth to " + str(meshBinWidth))
-
- 
-      
+     
       CreateSliceMesh.CreateSliceMesh(fileName=structMesh,
                                       centrePoint=np.array([0,0,0]),
                                       xLen=sideLen,
@@ -446,7 +450,8 @@ class SnuddaInit(object):
                      nChIN=None,
                      nLTS=None,
                      volumeType=None,
-                     sideLen=None):
+                     sideLen=None,
+                     sliceDepth=None):
 
     getVal = lambda x : 0 if x is None else x
     if(nNeurons is None):
@@ -708,13 +713,9 @@ class SnuddaInit(object):
     
     ## Define MSD1 targets
 
-    # 2e-6 voxel method
-    # MSP11 = 0.25
-    # MSP12 = 0.17
-
     # 3e-6 voxel method
-    MSP11 = 0.55 # 0.17
-    MSP12 = 0.20 # 0.072 # 0.085 #0.1 # 0.14 then 0.16 old
+    MSP11 = 1.0 #0.55 
+    MSP12 = 1.0 #0.20 
 
 
     # Taverna 2008, fig 3E&F:
@@ -747,14 +748,36 @@ class SnuddaInit(object):
     pfdSPNiSPN = "synapses/v2/PlanertFitting-DI-tmgaba-fit.json"
     pfdSPNChIN = None
 
-    SPN2ChINDistDepPruning = "1-np.exp(-(0.4*d/60e-6)**2)" # Chuhma about 20pA response from 10% SPN, we need to reduce activity, try dist dep pruning (already so few synapses and connectivity)
+
+    # Argument for distance dependent SPN-SPN synapses:
+    # Koos, Tepper, Wilson 2004 -- SPN-SPN more distally
+
+    # From this paper, https://www.frontiersin.org/articles/10.3389/fnana.2010.00150/full, 
+    #
+    # This is in contrast to the axon collateral synapses between SPNs
+    # (Tunstall et al., 2002), which typically evoke significantly
+    # smaller IPSPs/IPSCs than FSI-evoked synaptic responses when
+    # recorded somatically (Koós et al., 2004; Tepper et al., 2004,
+    # 2008; Gustafson et al., 2006) due to a combination of
+    # predominantly distal synaptic locations (88%; Wilson and Groves,
+    # 1980) and relatively few synaptic (2–3) connections made by each
+    # SPN on each postsynaptic SPN (Koós et al., 2004)
+    #
+    # Also, In Kai's Thesis on the first page, He used this reference,
+    # https://www.sciencedirect.com/science/article/pii/S0166223612001191?via%3Dihub,
+    #
 
     
+    SPN2SPNdistDepPruning = "1-np.exp(-(0.4*d/60e-6)**2)" # With Taverna conductances, we see that the response is much stronger than Planert 2010. We try to introduce distance dependent pruning to see if removing strong proximal synapses will give a better match to experimental data.
+    
+    SPN2ChINDistDepPruning = "1-np.exp(-(0.4*d/60e-6)**2)" # Chuhma about 20pA response from 10% SPN, we need to reduce activity, try dist dep pruning (already so few synapses and connectivity)
+
+    # old f1 = 0.15
     self.addNeuronTarget(neuronName="dSPN",
                          targetName="dSPN",
                          connectionType="GABA",
-                         distPruning=None,
-                         f1=0.15, softMax=3, mu2=2.4,
+                         distPruning=SPN2SPNdistDepPruning,
+                         f1=0.38, softMax=3, mu2=2.4,
                          a3=P11withinChannel,
                          a3_other=P11betweenChannel,
                          conductance=MSD1gGABA,
@@ -764,11 +787,12 @@ class SnuddaInit(object):
                                                  "tau2" : 12.4e-3,
                                                  "failRate" : MSD1GABAfailRate})
 
+    # old f1 = 0.15
     self.addNeuronTarget(neuronName="dSPN",
                          targetName="iSPN",
                          connectionType="GABA",
-                         distPruning=None,
-                         f1=0.15, softMax=3, mu2=2.4, 
+                         distPruning=SPN2SPNdistDepPruning,
+                         f1=0.20, softMax=3, mu2=2.4, 
                          a3=P12withinChannel,
                          a3_other=P12betweenChannel,
                          conductance=MSD1gGABA,
@@ -801,13 +825,10 @@ class SnuddaInit(object):
 
     ## Define MSD2 targets
 
-    # 2e-6 voxels
-    # MSP21 = 0.4
-    # MSP22 = 0.8
 
     # 3e-6 voxel method
-    MSP21 = 0.50 #0.23
-    MSP22 = 0.95 #0.4
+    MSP21 = 1.0 #0.50 
+    MSP22 = 1.0 # 0.95 
 
     # OLD: 24pA * 51 receptors = 1.15e-9 -- Taverna 2008, fig3
     # OLD: std ~ +/- 10 receptors [1.24e-9, 0.24e-9]
@@ -839,13 +860,14 @@ class SnuddaInit(object):
     pfiSPNiSPN = "synapses/v2/PlanertFitting-II-tmgaba-fit.json"
     pfiSPNChIN = None
 
-    
-    
+    # GABA decay från Taverna 2008
+
+    # old f1 = 0.15
     self.addNeuronTarget(neuronName="iSPN",
                          targetName="dSPN",
                          connectionType="GABA",
-                         distPruning=None,
-                         f1=0.15, softMax=4, mu2=2.4,
+                         distPruning=SPN2SPNdistDepPruning,
+                         f1=0.3, softMax=4, mu2=2.4,
                          a3=P21withinChannel,
                          a3_other=P21betweenChannel,
                          conductance=MSD2gGABA,
@@ -855,11 +877,12 @@ class SnuddaInit(object):
                                                  "tau2" : 12.4e-3,
                                                  "failRate" : MSD2GABAfailRate})
 
+    # old f1 = 0.15
     self.addNeuronTarget(neuronName="iSPN",
                          targetName="iSPN",
                          connectionType="GABA",
-                         distPruning=None,
-                         f1=0.15, softMax=4, mu2=2.4,
+                         distPruning=SPN2SPNdistDepPruning,
+                         f1=0.55, softMax=4, mu2=2.4,
                          a3=P22withinChannel,
                          a3_other=P22betweenChannel,
                          conductance=MSD2gGABA,
