@@ -1079,8 +1079,7 @@ class SnuddaSimulate(object):
       Istim.dur       =   1500
       Istim.amp       =   pd['stimuli'][0]['amp']
       self.istim.append(Istim)
-  
-  
+      
       
   ############################################################################
   # dopamine modulation
@@ -1583,8 +1582,6 @@ class SnuddaSimulate(object):
   def addRecording(self,cellID=None,sideLen=None):
     self.writeLog("Adding somatic recordings")
     
-    print(cellID, self.neuronID)
-    
     if(cellID is None):
       cellID = self.neuronID
 
@@ -1913,6 +1910,18 @@ class SnuddaSimulate(object):
     curStim.amp = amplitude*1e9 # What is units of amp?? nA??
 
     self.iStim.append(curStim)
+  
+  
+  def addCurrent2Type(self,neuronType,startTime=1.0,endTime=1.5,amplitude=-50e-12,nNeurons=None):
+    '''wrapper function adding current injection in soma of certain type
+        by default all of type will be affected. Subset can be specified using arg nNeurons
+    '''
+    
+    cellID = self.snuddaLoader.getCellIDofType(neuronType=neuronType,
+                                               nNeurons=nNeurons)
+    print(cellID)
+    for neuronID in cellID:
+      self.addCurrentInjection(neuronID,startTime,endTime,amplitude)
 
   ############################################################################
 
@@ -2106,14 +2115,15 @@ if __name__ == "__main__":
   
   sim.addExternalInput()
   #sim.addCurrentFromProtocol()
+  sim.addCurrent2Type('FSN',startTime=1.7,endTime=2.0,amplitude=-50e-12)
   
   if(voltFile is not None):
-    #sim.addRecording(sideLen=None) # Side len let you record from a subset
-    sim.addRecordingOfType("dSPN",10)
+    sim.addRecording(sideLen=None) # Side len let you record from a subset
+    '''sim.addRecordingOfType("dSPN",10)
     sim.addRecordingOfType("iSPN",10)
     sim.addRecordingOfType("FSN",10)
     sim.addRecordingOfType("LTS",10)
-    sim.addRecordingOfType("ChIN",10)
+    sim.addRecordingOfType("ChIN",10)'''
     # TODO implement recording of all individual cell types in network (one copy each)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
@@ -2126,12 +2136,12 @@ if __name__ == "__main__":
   v2 = sim.sim.neuron.h.Vector(vgaba)
   vglut = [1 if (ht>3500 and ht<4000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
   v3 = sim.sim.neuron.h.Vector(vglut)'''
-  vplay = [1 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.025)]
-  v = sim.sim.neuron.h.Vector(vplay)
+  #vplay = [1 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.025)]
+  #v = sim.sim.neuron.h.Vector(vplay)
   #sim.modTrans.append( vneuron )
-  sim.applyDopamine(transient=v)
-  sim.setGABAmod(   transient=v)
-  sim.setGLUTmod(   transient=v)
+  #sim.applyDopamine(transient=v)
+  #sim.setGABAmod(   transient=v)
+  #sim.setGLUTmod(   transient=v)
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds
