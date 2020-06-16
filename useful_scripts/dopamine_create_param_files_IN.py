@@ -39,6 +39,7 @@ for cell_type in ['fs', 'chin', 'lts']:
     for model in model_specs[cell_type]['name']:               
         
         # open paramfile
+        print(cell_type)
         param_org = json.load(open( '../cellspecs/{}/{}/parameters.json'.format(cell_type,model) ))
         param_new = []
         
@@ -52,7 +53,7 @@ for cell_type in ['fs', 'chin', 'lts']:
                 split = par["param_name"].split('_')
                 if len(split) > 1: name = split[1]
                 else:continue
-                if 'mech_param' in par: if par['mech_param'] = 'q': continue
+                if 'mech_param' in par and par['mech_param'] == 'q': continue
                 # check if the param is modulated by da?
                 for k,key in enumerate(suffix[cell_type]):
                     if name == key:

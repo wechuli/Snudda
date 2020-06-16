@@ -931,6 +931,8 @@ class SnuddaInit(object):
 
     # !!! SET RELEASE TO GABA FOR NOW
     
+    # COMMENTING ChIN -> SPN CONNECTIONS
+    '''
     self.addNeuronTarget(neuronName="ChIN",
                          targetName="dSPN",
                          connectionType="GABA",
@@ -939,10 +941,11 @@ class SnuddaInit(object):
                          conductance=ChINgGABA,
                          parameterFile=pfChINdSPN,
                          modFile="tmGabaA",
-                         channelParamDictionary=None)
+                         channelParamDictionary=None)'''
 
     # TEST SETTING THIS TO ACh (SHOULD BE GABA), will this change?
     # !!!
+    '''
     self.addNeuronTarget(neuronName="ChIN",
                          targetName="iSPN",
                          connectionType="GABA",
@@ -951,7 +954,7 @@ class SnuddaInit(object):
                          conductance=ChINgGABA,
                          parameterFile=pfChINiSPN,
                          modFile="tmGabaA",
-                         channelParamDictionary=None)
+                         channelParamDictionary=None)'''
 
     # We got an increasing connection distribution with distance, looks fishy
     # !!! Should be ACh, lets try set it to GABA and see if that changes things

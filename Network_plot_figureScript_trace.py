@@ -189,10 +189,10 @@ class NetworkPlotTraces():
 
     
     if(len(typesInPlot) > 1):
-      figName = 'figures/Network-spikes-' + str(self.ID) \
+      figName = 'figures/Network-rev4-inpres-spikes-' + str(self.ID) \
         + "-".join(typesInPlot) + "-colour.png"
     else:
-      figName = 'figures/Network-spikes-Skynet100000'  \
+      figName = 'figures/Network-rev4-inpres-spikes-Skynet100000'  \
         + "-" + typesInPlot.pop() + "-colour.png"
       
     plt.savefig(figName,

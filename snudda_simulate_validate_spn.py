@@ -295,8 +295,6 @@ class SnuddaSimulate(object):
     
     self.writeLog("Setup neurons")
     
-    # self.sim = ephys.simulators.NrnSimulator(cvode_active=False)
-    #self.sim = NrnSimulatorParallel()
     self.sim = NrnSimulatorParallel(cvode_active=False)
 
     # We need to load all the synapse parameters
@@ -340,11 +338,12 @@ class SnuddaSimulate(object):
        
       else:
         # A real neuron (not a virtual neuron that just provides input)
-
+        print(morph, name, param)
         self.neurons[ID] = NeuronModel(param_file=param,
                                        morph_file=morph,
                                        mech_file=mech,
                                        cell_name=name)
+                                       
         
         # Register ID as belonging to this worker node
         self.pc.set_gid2node(ID, int(self.pc.id()))
@@ -356,7 +355,7 @@ class SnuddaSimulate(object):
         # We need to instantiate the cell
         try:
           self.neurons[ID].instantiate(sim=self.sim)
-
+          
           self.setRestingVoltage(ID)
           
         except:
@@ -390,7 +389,8 @@ class SnuddaSimulate(object):
       
         # Record all spikes
         self.pc.spike_record(ID,self.tSpikes,self.idSpikes)
-
+        
+    
   ############################################################################
 
   def connectNetwork(self, disableSynapses=False):
@@ -1070,11 +1070,23 @@ class SnuddaSimulate(object):
         protocols = json.load(pfile)
         
       # get one of the superthreshold protocols  
+      '''
       for key,pd in list(protocols.items()):
         if 'sub' in key or 'IV' in key: continue
         print( '........\t', pd['stimuli'][1]['amp'], key, pd['stimuli'][0]['amp'], name, prot_file_name )
         break
-        
+      '''
+      # select first spiking prot
+      all_keys    = sorted(protocols.keys())
+      i           = 0
+      key         = all_keys[i]
+      
+      while 'sub' in key:
+        i  += 1
+        key = all_keys[i]
+      print(key)
+      pd = protocols[key]
+      
       # baseline injection
       Istim           =   self.sim.neuron.h.IClamp(0.5, \
                             sec=self.neurons[neuronID].icell.soma[0])
@@ -1427,54 +1439,7 @@ class SnuddaSimulate(object):
 
     self.writeLog("Adding inputs from virtual neurons")
 
-    
-          
-  ############################################################################
   
-  # This adds external input (presumably cortical and thalamic)
-  def addExternalInputOLD(self,nInputs=50,freq=5.0):
-    self.writeLog("Adding external (cortical, thalamic) input (OLD VERSION)")
-    assert False, "This uses neuron generated spikes, please use new function"
-    
-    for neuronID in self.neurons:
-      neuron = self.neurons[neuronID]
-      
-      self.externalStim[neuronID] = []
-      
-      for i in range(0,nInputs):
-        #if(neuronID != 1): # !!! TEST, only input to one neuron to see synapses work
-        #  continue
-        try:
-          randComp = np.random.choice(neuron.icell.dend)
-          randDist = np.random.random(1)
-          
-          netStim = self.sim.neuron.h.NetStim()
-          netStim.start = 0
-          netStim.interval = 1000.0/freq # units ms :(
-          
-          # self.writeLog("Interval " + str(netStim.interval) + " ms")
-            
-          netStim.noise = 1.0
-          netStim.number = 10000
-          
-          self.externalStim[neuronID].append(netStim)
-
-          # self.writeLog("RandComp: " + str(randComp) \
-          #               + "dist: " + str(randDist[0]))
-            
-          syn = self.sim.neuron.h.tmGlut(randComp(randDist[0]))
-          nc = self.sim.neuron.h.NetCon(netStim,syn)
-          nc.delay = 1
-          nc.weight[0] = 0.1
-          nc.threshold = 0.1
-          
-          self.netConList.append(nc)
-          self.synapseList.append(syn)
-        except Exception as e:
-          self.writeLog("Error! " + str(e))
-          import pdb
-          pdb.set_trace()
-
   ############################################################################
 
   # This code uses PatternStim to send input to neurons from file
@@ -1592,6 +1557,32 @@ class SnuddaSimulate(object):
         self.iKey.append(cID)
     
   ############################################################################
+      
+  def print_dendritic_channel_distribution(self):
+    ''' function for plotting channel distribution '''
+    for ID in self.neuronID:
+        
+        name = self.network_info["neurons"][ID]["name"]
+        print('_____________________________________________')
+        print(name)
+        print(self.network_info["neurons"][ID]['morphology'])
+        
+        for i,sec in enumerate(self.neurons[ID].icell.basal):
+            for j,seg in enumerate(sec):
+                for mech in seg:
+                    if mech.name() not in ['kas_ms']: continue
+                    try:
+                        print(i,j, mech.name(), mech.gbar, seg.area())
+                    except:
+                        pass
+    import pdb
+    pdb.set_trace()
+      
+      
+      
+    
+    
+  ################################################
   
   def addRecording(self,cellID=None,sideLen=None):
     self.writeLog("Adding somatic recordings")
@@ -2094,7 +2085,7 @@ if __name__ == "__main__":
   # ======================================================================
   
   # No inhibiton between cells if 1
-  disableSynapses = 0
+  disableSynapses = 1
   
   disableGJ = args.disableGJ
   assert disableGJ, "Please use --disableGJ for now, need to test code"
@@ -2105,75 +2096,28 @@ if __name__ == "__main__":
   
   pc = h.ParallelContext()
   
-  
-  '''  
-  sim = SnuddaSimulate( networkFile=networkDataFile,
-                        inputFile=inputFile,
-                        disableGapJunctions=disableGJ,
-                        disableSynapses=disableSynapses,
-                        logFile=logFile)
-  sim.addRecording(sideLen=None)  
-  #sim.addCurrentInjection( iamp )
-  sim.addCurrentFromProtocol()
-  
-  v = [alpha(ht, 500, 500) for ht in np.arange(0,1500,0.025)]
-  
-  for r,tag in enumerate(['ctrl','da','trans']):
-    if tag == 'trans':
-      sim.applyDopamine(play=v)
-    elif tag == 'da':
-      sim.applyDopamine() 
-    print(tag)
-    sim.run(tSim)
-    sim.writeSpikes('save/traces/network-output-spikes-{}_orgM_disSyn{}.txt'.format(tag, disableSynapses))
-    sim.writeVoltage('save/traces/network-voltage-{}_orgM_disSyn{}.csv'.format(tag, disableSynapses), downSampling=1, use_name=1)
-  '''
-  lateral = [['iSPN','dSPN'],['iSPN','iSPN'],['dSPN','iSPN'],['dSPN','dSPN']]
-  feedforward = [['FSN','dSPN'],['FSN','iSPN']]
-  ltsinh = [['LTS','dSPN'],['LTS','iSPN']]
-  disinhibit = [[], lateral, feedforward, ltsinh]
-  #disinhibit = [lateral + feedforward + ltsinh]
   sim = SnuddaSimulate(networkFile=networkDataFile,
                        inputFile=inputFile,
                        disableGapJunctions=disableGJ,
                        disableSynapses=disableSynapses,
-                       disableConnection=disinhibit[0],
                        logFile=logFile,
                        verbose=args.verbose)
   
-  sim.addExternalInput()
-  #sim.addCurrentFromProtocol()
-  sim.addCurrent2Type('LTS',startTime=0.005,endTime=0.1,amplitude=-15e-12,randPert=0.2)
+  #sim.addExternalInput()
+  sim.addCurrentFromProtocol()
+  #sim.addCurrent2Type('LTS',startTime=0.005,endTime=0.1,amplitude=-15e-12,randPert=0.2)
   
   if(voltFile is not None):
-    #sim.addRecording(sideLen=None) # Side len let you record from a subset
-    neach = 5
+    '''
+    neach = 4
     sim.addRecordingOfType("dSPN",neach)
     sim.addRecordingOfType("iSPN",neach)
-    sim.addRecordingOfType("FSN",neach)
-    sim.addRecordingOfType("LTS",neach)
-    sim.addRecordingOfType("ChIN",neach)
-    # TODO implement recording of all individual cell types in network (one copy each)
+    '''
+    sim.addRecording(sideLen=None)
 
   tSim = args.time*1000 # Convert from s to ms for Neuron simulator
   
-  #v = [alpha(ht, 300, 100) for ht in np.arange(0,1500,0.025)]
-  '''
-  vintr = [1 if (ht>1500 and ht<2000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
-  v1 = sim.sim.neuron.h.Vector(vintr)
-  vgaba = [1 if (ht>2500 and ht<3000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
-  v2 = sim.sim.neuron.h.Vector(vgaba)
-  vglut = [1 if (ht>3500 and ht<4000) or (ht>4500 and ht<5000) else 0 for ht in np.arange(0,7000,0.025)]
-  v3 = sim.sim.neuron.h.Vector(vglut)'''
-  vplay = [0.5 if (ht>1700 and ht<2000) else 0 for ht in np.arange(0,2500,0.025)]
-  # make second vector of same length and sum the two vectors (high DA first 200 ms, then zero DA for some time and finally 0.5)
-  v2p = [1.0 if (ht<200) else 0 for ht in np.arange(0,2500,0.025)]
-  vsum = [vplay[i] + v2p[i] for i,vv in enumerate(vplay)]
-  v = sim.sim.neuron.h.Vector(vsum)
-  #sim.modTrans.append( vneuron ) # what's this line doing, nothing? remove???
-  sim.applyDopamine(transient=v)
-  sim.setGABAmod(   transient=v)
-  sim.setGLUTmod(   transient=v)
+  #sim.print_dendritic_channel_distribution()
   
   print("Running simulation for " + str(tSim) + " ms.")
   sim.run(tSim) # In milliseconds
@@ -2185,11 +2129,10 @@ if __name__ == "__main__":
   if(voltFile is not None):
     sim.writeVoltage(voltFile, sample=0)
 
-
   stop = timeit.default_timer()
   if(sim.pc.id() == 0):
     print("Program run time: " + str(stop - start ))
-
+    
   # sim.plot()
   exit(0)
 

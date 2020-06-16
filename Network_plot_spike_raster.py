@@ -66,7 +66,7 @@ class NetworkPlotSpikeRaster(object):
     plt.draw()
     plt.pause(0.001)
     # plt.savefig('figures/Network-spike-raster-' + str(self.ID) + ".pdf")
-    plt.savefig('figures/Network-spike-raster-' + str(self.ID) + ".png",dpi=600)    
+    plt.savefig('figures/Network-rev3-noLtsInh-spike-raster-' + str(self.ID) + ".png",dpi=600)    
 
     print("Figure done")
 
@@ -109,6 +109,7 @@ class NetworkPlotSpikeRaster(object):
                color=[cols2[t] for t in tIdx],s=1,
                linewidths=0.1)
     # histogram
+    histdata = {}
     for t in typeOrder:
         pruned_spikes = [   self.time[int(i)]-skipTime for i in tIdx if i in typedict[t] ]
         '''
@@ -119,13 +120,17 @@ class NetworkPlotSpikeRaster(object):
                     color=c, 
                     alpha=0.3, 
                     histtype='stepfilled')'''
-        atop.hist(  pruned_spikes, 
+        hd = atop.hist(  pruned_spikes, 
                     bins=100, 
                     range=(0,maxt), 
                     density=1,
                     color=colours[t], 
                     alpha=1.0, 
                     histtype='step')
+        
+        histdata[t] = { 'n':list(hd[0]), 'bins':list(hd[1])}
+        print(t, list(hd[0]))
+        print(t, list(hd[1]))
     
     ax.invert_yaxis()
     
@@ -162,9 +167,13 @@ class NetworkPlotSpikeRaster(object):
     
     # have updated the name of the saved file to be the same as the fileName
     fn = os.path.basename(self.fileName)
-    figName = '{}/{}{}'.format(figPath, fn.split('.')[0], '-test5-colour.png')
+    figName = '{}/{}{}'.format(figPath, fn.split('.')[0], '-inpres.png')
     print("Saving " + figName)
-    plt.savefig(figName,dpi=600,transparent=True)    
+    plt.savefig(figName,dpi=600,transparent=True)   
+    
+    #import json
+    #with open(figName.replace('.png','.json'), 'wt') as handle:
+    #    json.dump(histdata,handle,indent=4) 
 
    ############################################################################
 

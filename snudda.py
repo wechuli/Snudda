@@ -23,6 +23,8 @@
 #
 # snudda simulate <networkPath>
 #
+# snudda validate <networkPath>
+#
 # snudda analyse <networkPath>
 #
 #
@@ -358,6 +360,36 @@ class Snudda(object):
       cmdStr += " --voltOut " + args.voltOut
 
     os.system(cmdStr)
+    
+  ############################################################################
+
+  def validate(self,args):
+
+    if(args.networkFile):
+      networkFile = args.networkFile
+    else:
+      networkFile = self.networkPath \
+        + "/network-pruned-synapses.hdf5"
+
+    if(args.inputFile):
+      inputFile = args.inputFile
+    else:
+      inputFile = self.networkPath + "/input-spikes.hdf5"
+
+    self.makeDirIfNeeded(self.networkPath + "/simulation")
+      
+    print("Using input file " + inputFile)
+
+    nWorkers = 1
+    
+    mechDir = "cellspecs/mechanisms_with_modulation"
+    #mechDir = "cellspecs/mechanisms"
+    cmdStr = "nrnivmodl " + mechDir + " && mpiexec -n " + str(nWorkers) + " -map-by socket:OVERSUBSCRIBE python3 snudda_simulate_validate_spn.py " + networkFile + " " + inputFile + " --time " + str(args.time) + " --disableGJ"
+
+    if(args.voltOut is not None):
+      cmdStr += " --voltOut " + args.voltOut
+
+    os.system(cmdStr)
   
   ############################################################################
   
@@ -500,7 +532,7 @@ if __name__ == "__main__":
   import argparse
   parser = argparse.ArgumentParser(description="Microcircuit generation")
   parser.add_argument("action", choices=["init","place","detect",
-                                         "prune","input","export","analyse","convert","simulate","help"],
+                                         "prune","input","export","analyse","convert","simulate", "validate", "help"],
                       help="Action to do")
   parser.add_argument("path", help="Storage path for network files")
   parser.add_argument("--size",type=int,help="Number of neurons",
@@ -539,6 +571,7 @@ if __name__ == "__main__":
               "convert" : snudda.exportToSONATA,
               "analyse" : snudda.analyse,
               "simulate" : snudda.simulate,
+              "validate" : snudda.validate,
               "help" : snudda.helpInfo}
 
   

@@ -98,7 +98,7 @@ class NeuronModel(ephys.models.CellModel):
     # detect if new or old file is used; if new param files draw random from list of list. 
     if "with_mod" in parameter_config:
       print("Neuron_model_extended -> define paramters: setting random seed: " + str(self.randomSeed))
-      np.random.seed(self.randomSeed)
+      #np.random.seed(self.randomSeed)
       random_param_id = np.random.randint( len(param_configs) )
       allparamdefs = param_configs[random_param_id]
     else: allparamdefs = param_configs
@@ -131,7 +131,7 @@ class NeuronModel(ephys.models.CellModel):
       elif param_config['type'] in ['section', 'range']:
         if param_config['dist_type'] == 'uniform':
           scaler = ephys.parameterscalers.NrnSegmentLinearScaler()
-        elif param_config['dist_type'] == 'exp':
+        elif param_config['dist_type'] in ['exp', 'distance']:
           scaler = ephys.parameterscalers.NrnSegmentSomaDistanceScaler(
             distribution=param_config['dist'])
         seclist_loc = ephys.locations.NrnSeclistLocation(

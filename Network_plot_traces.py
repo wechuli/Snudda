@@ -1,7 +1,7 @@
 # python3 Network_plot_traces.py save/traces/network-voltage-0.csv save/network-connect-synapse-file-0.hdf5
 
 
-import sys, pickle
+import sys, pickle, json
 import os
 import numpy as np
 from snudda_load import SnuddaLoad
@@ -139,6 +139,7 @@ class NetworkPlotTraces():
       return
     
     if compare:
+        '''
         path2control = '../Alex_model_repo/models/optim/Dopamine/Analysis/Results/'
         if title in ['iSPN', 'dSPN']:
             with open('{}{}_res_org.pkl'.format(path2control, title.lower()), 'rb') as f:
@@ -158,6 +159,28 @@ class NetworkPlotTraces():
             if cid >= len(ctrl[0]['data']):continue
             data = list(ctrl[0]['data'][cid]['control'].values())[0]
             plt.plot(np.array(data['t'])*1e-3,np.array(data['v'])*1e-3, '--k')
+        '''
+        p2f = '../Striatal_dSPN_lib/Striatal_network_models/transformation_files/val_data.json'
+        with open(p2f) as json_file:
+            ext_data = json.load(json_file)
+        
+        k1 = title.lower()
+        for trace in ext_data[k1].values():
+            plt.plot(np.array(ext_data['time'])*1e-3, np.array(trace)*1e-3, ':m')
+        
+    if title == 'LTS':
+        # import files
+        import numpy
+        t = numpy.loadtxt('time_fake_LTS.txt', unpack=True)
+        v = numpy.loadtxt('voltage_fake_LTS.txt', unpack=True)
+        # plot
+        plt.plot(t*1e-3,v*1e-3, '--k')
+        # import files
+        import numpy
+        t = numpy.loadtxt('time_fake_LTS_new.txt', unpack=True)
+        v = numpy.loadtxt('voltage_fake_LTS_new.txt', unpack=True)
+        # plot
+        plt.plot(t*1e-3,v*1e-3, '--r')
     
     plt.xlabel('Time')
     plt.ylabel('Voltage')
@@ -181,10 +204,10 @@ class NetworkPlotTraces():
 
     
     if(len(typesInPlot) > 1):
-      figName = 'figures/Network-spikes-' + str(self.ID) \
+      figName = 'figures/val-' + str(self.ID) \
         + "-".join(typesInPlot) + "-colour.png"
     else:
-      figName = 'figures/Network-spikes-' + str(self.ID) \
+      figName = 'figures/val-' + str(self.ID) \
         + "-" + typesInPlot.pop() + "-colour.png"
       
     plt.savefig(figName,
@@ -239,14 +262,14 @@ if __name__ == "__main__":
 
     plotOffset  = 0 # -0.2
     skipTime    = 0 #0.5
-    nTracesMax  = 5
-    comp        = 0
+    nTracesMax  = 4
+    comp        = 1
     
     npt.plotTraceNeuronType(neuronType="dSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
     npt.plotTraceNeuronType(neuronType="iSPN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
-    npt.plotTraceNeuronType(neuronType="FSN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
-    npt.plotTraceNeuronType(neuronType="LTS",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
-    npt.plotTraceNeuronType(neuronType="ChIN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    #npt.plotTraceNeuronType(neuronType="FSN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    #npt.plotTraceNeuronType(neuronType="LTS",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
+    #npt.plotTraceNeuronType(neuronType="ChIN",nTraces=nTracesMax,offset=plotOffset,skipTime=skipTime,compare=comp)
     
     
     

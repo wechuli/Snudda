@@ -15,14 +15,14 @@ if __name__ == "__main__":
   #simName = args.network
   #simName = "networks/SynTest-v6" # MSMS tuning
   #simName = "networks/SynTest-v15"
-  simName = "custom5each" 
+  simName = "Validate_spn_net_fixed" 
   
   # connect network? > True/False
   connectNeurons = 1 #False
   
   configName= simName + "/network-config.json"
   cnc = SnuddaInit(structDef={},configName=configName,nChannels=1)
-  cnc.defineStriatum(nMSD1=5,nMSD2=5,nFS=5,nLTS=5,nChIN=5,volumeType="cube")  
+  cnc.defineStriatum(nMSD1=4,nMSD2=4,nFS=0,nLTS=0,nChIN=0,volumeType="cube")  
   #cnc.defineStriatum(nMSD1=120,nMSD2=120,nFS=20,nLTS=0,nChIN=0,volumeType="slice")
 
   dirName = os.path.dirname(configName)
