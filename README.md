@@ -1,3 +1,4 @@
+trigger
 ## Summary of Snudda
 Snudda creates the connectivity for realistic networks of simulated neurons in silico in a bottom up fashion that can then be simulated using the NEURON software. Neurons are placed within 3D meshes representing the structures of interest, with neural densities as seen in experiments. Based on reconstructed morphologies and neuron placement we can infer locations of putative synapses based on proximity between axon and dendrites. Projections between different structures can be added either using axon reconstructions, or by defining a connectivity map between regions. Putative synapses are pruned to match experimental pair-wise data on connectivity. Networks can be simulated either on desktop machines, or on super computers.
 
